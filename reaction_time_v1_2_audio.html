@@ -124,6 +124,19 @@ button{font-family:inherit;cursor:pointer;border:0}
   .resultTime{font-size:66px}
   .goldRing{width:220px;height:220px}
 }
+/* ranking additions */
+.nameWrap{width:100%;margin-top:10px;display:flex;gap:8px;align-items:center}
+.nameInput{flex:1;border:2px solid var(--blue);border-radius:999px;padding:11px 18px;font-size:15px;font-weight:900;font-family:inherit;color:var(--text);outline:none;background:#fff}
+.nameInput::placeholder{color:var(--muted)}
+.rankSection{width:100%;margin-top:10px;position:relative;z-index:2}
+.rankSectionTitle{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;text-align:left}
+.rankRow{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;padding:7px 11px;margin-bottom:5px;background:#fff;font-size:13px;gap:6px}
+.rankRow.me{border-color:var(--blue);background:var(--blue-light)}
+.rankNum{font-weight:950;color:var(--muted);width:22px;flex-shrink:0;text-align:right}
+.rankName{font-weight:900;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rankTime{font-weight:950;color:var(--blue);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex-shrink:0}
+.rankFly{color:var(--danger)}
+#result .center{overflow-y:auto;-webkit-overflow-scrolling:touch}
 </style>
 </head>
 <body>
@@ -142,6 +155,7 @@ button{font-family:inherit;cursor:pointer;border:0}
       <p class="copy2">あなたの反応は何秒？</p>
       <p class="copy3">スタート感覚をゲームしよう！</p>
     </div>
+    <div class="nameWrap"><input class="nameInput" id="playerName" type="text" maxlength="12" placeholder="プレイヤー名（最大12文字）"></div>
     <button class="mainBtn" id="playBtn">PLAY</button>
     <button class="subBtn" id="collectionBtn">称号コレクション</button>
     <div class="bestPanel"><div><small>BEST RECORD</small><strong id="homeBest">--.---</strong></div><div style="font-size:26px">⏱</div></div>
@@ -177,10 +191,13 @@ button{font-family:inherit;cursor:pointer;border:0}
         <div class="rankBox" id="rankBox"></div>
         <div class="infoBox" id="bestLine"></div>
         <div class="infoBox" id="diffBox"></div>
+        <div class="rankSection" id="historySection"><div class="rankSectionTitle">▸ 直近10回の記録</div><div id="historyList"></div></div>
+        <div class="rankSection" id="top10Section"><div class="rankSectionTitle">▸ ローカルTOP10</div><div id="top10List"></div></div>
       </div>
     </div>
     <div class="actions"><button class="actionBtn" id="againBtn">もう一回</button><button class="actionBtn primary" id="shareBtn">シェア</button></div>
     <button class="subBtn" id="toCollectionBtn">称号を見る</button>
+    <button class="subBtn" id="resetRankBtn" style="margin-top:6px;color:var(--muted);border-color:var(--muted)">ランキングをリセット</button>
     <div class="footer">SWIM-ON GAMES</div>
   </section>
 
@@ -204,6 +221,8 @@ let best=localStorage.getItem("rt_v11_final_best")?Number(localStorage.getItem("
 let plays=Number(localStorage.getItem("rt_v11_final_plays")||0);
 let records=JSON.parse(localStorage.getItem("rt_v11_final_records")||"[]");
 let earned=JSON.parse(localStorage.getItem("rt_v11_final_earned")||"[]");
+let ranking=JSON.parse(localStorage.getItem("rt_v11_ranking")||"[]");
+let savedName=localStorage.getItem("rt_v11_player_name")||"";
 let lastText="REACTION TIME #SWIMONGAMES";
 let lastEarnedTitle=null;
 const ranks=[
@@ -217,6 +236,24 @@ const ranks=[
  {min:.90,max:99,title:"🏢 まだ招集所",comment:"スタート台までお急ぎください",collect:true,fx:"none"}
 ];
 function el(id){return document.getElementById(id)}
+function getPlayerName(){const v=el("playerName").value.trim();return v||"匿名";}
+function saveRankEntry(name,sec){
+  ranking.push({name,sec,date:new Date().toLocaleString("ja-JP")});
+  ranking.sort((a,b)=>a.sec-b.sec);
+  ranking=ranking.slice(0,50);
+  localStorage.setItem("rt_v11_ranking",JSON.stringify(ranking));
+}
+function renderRanking(currentSec,currentName){
+  // history: last 10 legal records
+  const hist=records.filter(r=>r.legal).slice(0,10);
+  el("historyList").innerHTML=hist.length===0?"<div style='font-size:12px;color:var(--muted);padding:4px 0'>記録なし</div>":
+    hist.map((r,i)=>"<div class='rankRow"+(i===0?" me":"")+"'><span class='rankNum'>"+(i+1)+"</span><span class='rankName'>"+r.date+"</span><span class='rankTime'>"+r.sec.toFixed(3)+"秒</span></div>").join("");
+  // top10 from ranking
+  const top10=ranking.slice(0,10);
+  const myPos=ranking.findIndex(r=>r.sec===currentSec&&r.name===currentName);
+  el("top10List").innerHTML=top10.length===0?"<div style='font-size:12px;color:var(--muted);padding:4px 0'>記録なし</div>":
+    top10.map((r,i)=>"<div class='rankRow"+(i===myPos?" me":"")+"'><span class='rankNum'>"+(i+1)+"</span><span class='rankName'>"+r.name+"</span><span class='rankTime'>"+r.sec.toFixed(3)+"秒</span></div>").join("");
+}
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));el(id).classList.add("active")}
 function rankOf(sec){return ranks.find(r=>sec>=r.min&&sec<r.max)||ranks[ranks.length-1]}
 function beep(freq=1250,dur=130){if(!audioOn)return;try{const Ctx=window.AudioContext||window.webkitAudioContext,ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=freq;gain.gain.value=.12;osc.connect(gain);gain.connect(ctx.destination);osc.start();setTimeout(()=>{osc.stop();ctx.close()},dur)}catch(e){}}
@@ -261,6 +298,10 @@ function finish(sec){
   localStorage.setItem("rt_v11_final_records",JSON.stringify(records));
   localStorage.setItem("rt_v11_final_earned",JSON.stringify(earned));
   localStorage.setItem("rt_v11_final_plays",String(plays));
+  const pname=getPlayerName();
+  savedName=pname;
+  localStorage.setItem("rt_v11_player_name",pname);
+  if(legal)saveRankEntry(pname,sec);
 
   el("resultTime").textContent=legal?sec.toFixed(3):"DQ";
   el("newRecord").classList.remove("danger");
@@ -274,6 +315,7 @@ function finish(sec){
   else el("diffBox").innerHTML="自己ベストまで あと <b>"+(sec-best).toFixed(3)+"</b> 秒！";
   lastText="REACTION TIME｜"+(legal?sec.toFixed(3)+"秒":"フライング")+"\n"+r.title+"\n#SWIMONGAMES";
   updateBest();
+  renderRanking(sec,pname);
   show("result");
   applyFx(r,isNew,isFirstEarn);
 }
@@ -294,6 +336,7 @@ function renderCollection(){
 async function share(){if(navigator.share){try{await navigator.share({text:lastText})}catch(e){}}else if(navigator.clipboard){await navigator.clipboard.writeText(lastText);alert("結果をコピーしました！")}else alert(lastText)}
 function toggleSound(){audioOn=!audioOn;document.querySelectorAll(".soundToggle").forEach(b=>b.textContent=audioOn?"🔊":"🔇");if(audioOn)beep(1000,80)}
 function resetAll(){if(confirm("記録をリセットしますか？")){localStorage.removeItem("rt_v11_final_best");localStorage.removeItem("rt_v11_final_plays");localStorage.removeItem("rt_v11_final_records");localStorage.removeItem("rt_v11_final_earned");best=null;plays=0;records=[];earned=[];updateBest();renderCollection();}}
+function resetRanking(){if(confirm("ランキングをリセットしますか？")){localStorage.removeItem("rt_v11_ranking");ranking=[];renderRanking(null,null);}}
 el("playBtn").onclick=startGame;
 el("againBtn").onclick=startGame;
 el("tapArea").onclick=()=>{if(state==="waiting"){clearTimeout(timer);finish(.001)}else if(state==="go")finish((performance.now()-startTime)/1000)};
@@ -304,7 +347,10 @@ el("toCollectionBtn").onclick=()=>{renderCollection();show("collection")};
 el("collectionBack").onclick=()=>show("home");
 el("shareBtn").onclick=share;
 el("resetBtn").onclick=resetAll;
+el("resetRankBtn").onclick=resetRanking;
 document.querySelectorAll(".soundToggle").forEach(b=>b.onclick=toggleSound);
+el("playerName").value=savedName;
+el("playerName").addEventListener("change",()=>{localStorage.setItem("rt_v11_player_name",el("playerName").value.trim());});
 updateBest();
 </script>
 </body>
