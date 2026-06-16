@@ -125,10 +125,10 @@ button{font-family:inherit;cursor:pointer;border:0}
   .goldRing{width:220px;height:220px}
 }
 /* daily challenge */
-.dailyBtn{width:100%;border-radius:999px;background:linear-gradient(180deg,var(--purple),#5A35C8);color:#fff;padding:14px 16px;font-size:15px;font-weight:950;letter-spacing:.06em;box-shadow:0 8px 20px rgba(122,85,232,.22);margin-top:12px;border:0;cursor:pointer}
+.dailyBtn{width:100%;border-radius:999px;background:linear-gradient(180deg,#E8312A,#B82220);color:#fff;padding:14px 16px;font-size:15px;font-weight:950;letter-spacing:.06em;box-shadow:0 8px 20px rgba(232,49,42,.22);margin-top:12px;border:0;cursor:pointer}
 .dailyMeta{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:8px;padding:0 4px}
-.dailyDayLabel{font-size:12px;font-weight:900;color:var(--purple)}
-.dailyStreakLabel{font-size:12px;font-weight:900;color:var(--purple)}
+.dailyDayLabel{display:none}
+.dailyStreakLabel{font-size:12px;font-weight:900;color:#E8312A}
 .dailyTrialsBadge{font-size:13px;font-weight:950;color:var(--purple);text-align:center;margin-bottom:6px;letter-spacing:.04em}
 /* ranking additions */
 .nameWrap{width:100%;margin-top:10px;display:flex;gap:8px;align-items:center}
@@ -274,7 +274,7 @@ function saveRankEntry(name,sec){
 }
 function renderRanking(currentSec,currentName){
   // history: last 10 legal records
-  const hist=records.filter(r=>r.legal).slice(0,10);
+  const hist=records.filter(r=>r.legal&&r.sec>=0.150).slice(0,10);
   el("historyList").innerHTML=hist.length===0?"<div style='font-size:12px;color:var(--muted);padding:4px 0'>記録なし</div>":
     hist.map((r,i)=>"<div class='rankRow"+(i===0?" me":"")+"'><span class='rankNum'>"+(i+1)+"</span><span class='rankName'>"+r.date+"</span><span class='rankTime'>"+r.sec.toFixed(3)+"秒</span></div>").join("");
   // top10 from ranking
