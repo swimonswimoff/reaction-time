@@ -204,7 +204,8 @@ button{font-family:inherit;cursor:pointer;border:0}
         <div class="rankSection" id="top10Section"><div class="rankSectionTitle">▸ ローカルTOP10</div><div id="top10List"></div></div>
       </div>
     </div>
-    <div class="actions"><button class="actionBtn" id="againBtn">もう一回</button><button class="actionBtn primary" id="shareBtn">シェア</button></div>
+    <div class="actions"><button class="actionBtn" id="againBtn">もう一回</button><button class="actionBtn primary" id="shareXBtn">𝕏 でシェア</button></div>
+    <button class="subBtn" id="shareCopyBtn" style="margin-top:8px">コピー</button>
     <button class="subBtn" id="toCollectionBtn">称号を見る</button>
     <button class="subBtn" id="resetRankBtn" style="margin-top:6px;color:var(--muted);border-color:var(--muted)">ランキングをリセット</button>
     <div class="footer">SWIM-ON GAMES</div>
@@ -222,7 +223,8 @@ button{font-family:inherit;cursor:pointer;border:0}
         <div class="infoBox" id="dailyStreakBox" style="margin-top:8px"></div>
       </div>
     </div>
-    <div class="actions"><button class="actionBtn" id="dailyShareBtn">シェア / コピー</button><button class="actionBtn primary" id="dailyHomeBtn">ホームへ</button></div>
+    <div class="actions"><button class="actionBtn primary" id="dailyShareXBtn">𝕏 でシェア</button><button class="actionBtn" id="dailyCopyBtn">コピー</button></div>
+    <button class="subBtn" id="dailyHomeBtn" style="margin-top:8px">ホームへ</button>
     <div class="footer">SWIM-ON GAMES</div>
   </section>
 
@@ -350,7 +352,8 @@ function showDailyResult(rec){
   else{el("dailyResultTime").textContent="DQ";el("dailyRankBox").innerHTML="😅 全試技フライング<small>失格</small>";}
   el("dailyAttemptsBox").innerHTML=rec.attempts.map((a,i)=>"#"+(i+1)+": "+(a>=0.150?a.toFixed(3)+"秒":"フライング")).join("　");
   el("dailyStreakBox").innerHTML=s>0?"🔥 <b>"+s+"日連続</b> チャレンジ！":"今日からストリーク開始！";
-  dailyShareText="Day #"+dn+": "+(avgMs?"平均"+avgMs+"ms":"フライング")+"\n"+rec.attempts.map((a,i)=>"#"+(i+1)+":"+(a>=0.15?Math.round(a*1000)+"ms":"DQ")).join(" ")+"\n#SWIMONGAMES";
+  const shareUrl2="https://swimonswimoff.github.io/reaction-time/reaction_time_v1_2_audio.html";
+  dailyShareText="🏊 SWIM-ON REACTION TIME\nDay #"+dn+": "+(avgMs?"平均"+avgMs+"ms":"フライング")+"\n🔥 "+s+"日連続チャレンジ中！\nあなたも試してみて！\n"+shareUrl2;
   updateDailyHomeInfo();
   show("dailyResult");
 }
@@ -413,7 +416,8 @@ function finish(sec){
   else if(isNew&&oldBest) el("diffBox").innerHTML="自己ベストを <b>"+(oldBest-sec).toFixed(3)+"</b> 秒更新！";
   else if(isNew) el("diffBox").innerHTML="初回記録！ここから <b>自己ベスト更新</b> を狙おう";
   else el("diffBox").innerHTML="自己ベストまで あと <b>"+(sec-best).toFixed(3)+"</b> 秒！";
-  lastText="REACTION TIME｜"+(legal?sec.toFixed(3)+"秒":"フライング")+"\n"+r.title+"\n#SWIMONGAMES";
+  const shareUrl="https://swimonswimoff.github.io/reaction-time/reaction_time_v1_2_audio.html";
+  lastText="🏊 SWIM-ON REACTION TIME\n反応速度: "+(legal?Math.round(sec*1000)+"ms":"フライング")+"\nあなたも試してみて！\n"+shareUrl;
   updateBest();
   renderRanking(sec,pname);
   show("result");
@@ -433,6 +437,8 @@ function renderCollection(){
     el("nextBadge").innerHTML=next?"次の称号まで あと <b>"+(best-next.max).toFixed(3)+"</b> 秒":"最高ランク級！すごい！";
   }
 }
+function openXShare(text){window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(text),"_blank","noopener")}
+async function copyText(text,btn){try{await navigator.clipboard.writeText(text);const orig=btn.textContent;btn.textContent="コピーしました！";setTimeout(()=>{btn.textContent=orig},1800)}catch(e){alert(text)}}
 async function share(){if(navigator.share){try{await navigator.share({text:lastText})}catch(e){}}else if(navigator.clipboard){await navigator.clipboard.writeText(lastText);alert("結果をコピーしました！")}else alert(lastText)}
 function toggleSound(){audioOn=!audioOn;document.querySelectorAll(".soundToggle").forEach(b=>b.textContent=audioOn?"🔊":"🔇");if(audioOn)beep(1000,80)}
 function resetAll(){if(confirm("記録をリセットしますか？")){localStorage.removeItem("rt_v11_final_best");localStorage.removeItem("rt_v11_final_plays");localStorage.removeItem("rt_v11_final_records");localStorage.removeItem("rt_v11_final_earned");best=null;plays=0;records=[];earned=[];updateBest();renderCollection();}}
@@ -448,17 +454,15 @@ el("resultBack").onclick=()=>show("home");
 el("collectionBtn").onclick=()=>{renderCollection();show("collection")};
 el("toCollectionBtn").onclick=()=>{renderCollection();show("collection")};
 el("collectionBack").onclick=()=>show("home");
-el("shareBtn").onclick=share;
+el("shareXBtn").onclick=()=>openXShare(lastText);
+el("shareCopyBtn").onclick=(e)=>copyText(lastText,e.currentTarget);
 el("resetBtn").onclick=resetAll;
 el("resetRankBtn").onclick=resetRanking;
 el("dailyBtn").onclick=startDailyChallenge;
 el("dailyResultBack").onclick=()=>show("home");
 el("dailyHomeBtn").onclick=()=>show("home");
-el("dailyShareBtn").onclick=async()=>{
-  if(navigator.share){try{await navigator.share({text:dailyShareText})}catch(e){}}
-  else if(navigator.clipboard){await navigator.clipboard.writeText(dailyShareText);alert("コピーしました！")}
-  else alert(dailyShareText);
-};
+el("dailyShareXBtn").onclick=()=>openXShare(dailyShareText);
+el("dailyCopyBtn").onclick=(e)=>copyText(dailyShareText,e.currentTarget);
 document.querySelectorAll(".soundToggle").forEach(b=>b.onclick=toggleSound);
 el("playerName").value=savedName;
 el("playerName").addEventListener("change",()=>{localStorage.setItem("rt_v11_player_name",el("playerName").value.trim());});
