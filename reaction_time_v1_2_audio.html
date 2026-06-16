@@ -217,7 +217,7 @@ button{font-family:inherit;cursor:pointer;border:0}
       <div class="brand-small">DAILY CHALLENGE</div>
       <div class="resultWrap">
         <div class="resultLabel" id="dailyResultLabel"></div>
-        <div class="resultTime"><span id="dailyResultTime">0.000</span><span class="sec">秒</span></div>
+        <div class="resultTime"><span id="dailyResultTime">0.000</span><span class="sec" id="dailyResultUnit">秒</span></div>
         <div class="rankBox" id="dailyRankBox"></div>
         <div class="infoBox" id="dailyAttemptsBox" style="margin-top:8px;font-size:13px"></div>
         <div class="infoBox" id="dailyStreakBox" style="margin-top:8px"></div>
@@ -254,8 +254,7 @@ let lastText="REACTION TIME #SWIMONGAMES";
 let lastEarnedTitle=null;
 // ---- Daily Challenge ----
 const DAILY_EPOCH=new Date("2026-06-16T00:00:00").getTime();
-const DAILY_TRIALS=3;
-let isDailyMode=false,dailyAttempts=[],dailyDelays=[],dailyAttemptIdx=0,dailyShareText="";
+let isDailyMode=false,dailyAttempts=[],dailySuccessFlags=[],dailyAttemptIdx=0,dailyShareText="",dailyTask=null;
 const ranks=[
  {min:0,max:.15,title:"🚨 フライング",comment:"審判長がお呼びです",collect:false,fx:"flying"},
  {min:.15,max:.30,title:"🏆 飛び込み職人",comment:"素晴らしいスタートです！",collect:true,fx:"confetti"},
@@ -289,12 +288,23 @@ function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMo
 function dayNum(){const t=new Date(todayStr()).getTime();return Math.floor((t-DAILY_EPOCH)/86400000)+1}
 function seededRand(seed){seed=(Math.imul(1664525,seed)+1013904223)>>>0;return{v:seed/0x100000000,s:seed}}
 function dailySeed(){const s=todayStr();let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h>>>0}
-function getDailyDelays(){let s=dailySeed();const d=[];for(let i=0;i<DAILY_TRIALS;i++){const r=seededRand(s);d.push(2200+r.v*2500);s=r.s;}return d}
+function getDailyTask(){
+  let s=dailySeed();
+  const targets=[0.25,0.30,0.35,0.40,0.45];
+  const patterns=[{total:3,need:2},{total:5,need:3}];
+  let r=seededRand(s);s=r.s;
+  const target=targets[Math.floor(r.v*targets.length)%targets.length];
+  r=seededRand(s);s=r.s;
+  const pat=patterns[Math.floor(r.v*patterns.length)%patterns.length];
+  const delays=[];
+  for(let i=0;i<pat.total;i++){r=seededRand(s);s=r.s;delays.push(2200+r.v*2500);}
+  return{target,total:pat.total,need:pat.need,delays};
+}
 function getDailyRec(){return JSON.parse(localStorage.getItem("rt_v11_daily_"+todayStr())||"null")}
-function saveDailyRec(attempts){
-  const legal=attempts.filter(a=>a>=0.150);
-  const avg=legal.length>0?legal.reduce((a,b)=>a+b,0)/legal.length:null;
-  const rec={attempts,avg};
+function saveDailyRec(attempts,successFlags,task){
+  const successCount=successFlags.filter(Boolean).length;
+  const cleared=successCount>=task.need;
+  const rec={attempts,successFlags,target:task.target,total:task.total,need:task.need,cleared};
   localStorage.setItem("rt_v11_daily_"+todayStr(),JSON.stringify(rec));
   const streak=JSON.parse(localStorage.getItem("rt_v11_daily_streak")||'{"last":"","count":0}');
   const today=todayStr();
@@ -320,7 +330,9 @@ function updateDailyHomeInfo(){
 function startDailyChallenge(){
   const rec=getDailyRec();
   if(rec){showDailyResult(rec);return;}
-  isDailyMode=true;dailyAttempts=[];dailyDelays=getDailyDelays();dailyAttemptIdx=0;
+  dailyTask=getDailyTask();
+  alert("Day #"+dayNum()+"のチャレンジ\n"+dailyTask.target.toFixed(3)+"秒以内を"+dailyTask.total+"回中"+dailyTask.need+"回出せ！");
+  isDailyMode=true;dailyAttempts=[];dailySuccessFlags=[];dailyAttemptIdx=0;
   startDailyAttempt();
 }
 function startDailyAttempt(){
@@ -328,32 +340,35 @@ function startDailyAttempt(){
   el("status").textContent="Take Your Marks...";el("tapArea").textContent="WAIT";el("tapArea").classList.remove("tap");
   el("note").innerHTML="「ピッ！」のあとにタップ！<br>フライングは失格です";
   el("dailyTrialsBadge").style.display="block";
-  el("dailyTrialsBadge").textContent="Day #"+dayNum()+"　試技 "+(dailyAttemptIdx+1)+" / "+DAILY_TRIALS;
-  timer=setTimeout(()=>{state="go";el("status").textContent="ピッ！";el("tapArea").textContent="TAP!";el("tapArea").classList.add("tap");el("note").textContent="今！";beep();startTime=performance.now()},dailyDelays[dailyAttemptIdx]);
+  el("dailyTrialsBadge").textContent="Day #"+dayNum()+"　"+dailyTask.target.toFixed(3)+"秒以内　"+(dailyAttemptIdx+1)+" / "+dailyTask.total;
+  timer=setTimeout(()=>{state="go";el("status").textContent="ピッ！";el("tapArea").textContent="TAP!";el("tapArea").classList.add("tap");el("note").textContent="今！";beep();startTime=performance.now()},dailyTask.delays[dailyAttemptIdx]);
 }
 function finishDailyAttempt(sec){
-  state="idle";dailyAttempts.push(sec);dailyAttemptIdx++;
-  if(dailyAttemptIdx<DAILY_TRIALS){
+  state="idle";
+  const legal=sec>=0.150,success=legal&&sec<=dailyTask.target;
+  dailyAttempts.push(sec);dailySuccessFlags.push(success);dailyAttemptIdx++;
+  if(dailyAttemptIdx<dailyTask.total){
     el("tapArea").classList.remove("tap");
-    el("note").textContent=sec>=0.150?sec.toFixed(3)+"秒":"フライング";
+    el("note").textContent=(legal?sec.toFixed(3)+"秒":"フライング")+(success?" ✅成功":" ❌失敗");
     el("status").textContent="次の準備...";
     setTimeout(()=>startDailyAttempt(),1500);
   }else{
-    const rec=saveDailyRec(dailyAttempts);
+    const rec=saveDailyRec(dailyAttempts,dailySuccessFlags,dailyTask);
     isDailyMode=false;el("dailyTrialsBadge").style.display="none";
     showDailyResult(rec);
   }
 }
 function showDailyResult(rec){
   const dn=dayNum(),s=getStreak();
-  const avgMs=rec.avg?Math.round(rec.avg*1000):null;
-  el("dailyResultLabel").textContent="Day #"+dn+" 完了！";
-  if(rec.avg){el("dailyResultTime").textContent=rec.avg.toFixed(3);el("dailyRankBox").innerHTML=rankOf(rec.avg).title+"<small>平均タイム（"+DAILY_TRIALS+"試技）</small>";}
-  else{el("dailyResultTime").textContent="DQ";el("dailyRankBox").innerHTML="😅 全試技フライング<small>失格</small>";}
-  el("dailyAttemptsBox").innerHTML=rec.attempts.map((a,i)=>"#"+(i+1)+": "+(a>=0.150?a.toFixed(3)+"秒":"フライング")).join("　");
+  const successCount=rec.successFlags.filter(Boolean).length;
+  el("dailyResultLabel").textContent="Day #"+dn+" チャレンジ結果";
+  el("dailyResultTime").textContent=successCount+" / "+rec.total;
+  el("dailyResultUnit").textContent="回成功";
+  el("dailyRankBox").innerHTML=(rec.cleared?"✅ クリア！":"❌ 未達成（また明日チャレンジ！）")+"<small>目標 "+rec.target.toFixed(3)+"秒以内を"+rec.total+"回中"+rec.need+"回</small>";
+  el("dailyAttemptsBox").innerHTML=rec.attempts.map((a,i)=>"#"+(i+1)+": "+(a>=0.150?a.toFixed(3)+"秒":"フライング")+(rec.successFlags[i]?" ✅":" ❌")).join("　");
   el("dailyStreakBox").innerHTML=s>0?"🔥 <b>"+s+"日連続</b> チャレンジ！":"今日からストリーク開始！";
   const shareUrl2="https://swimonswimoff.github.io/reaction-time/reaction_time_v1_2_audio.html";
-  dailyShareText="🏊 SWIM-ON REACTION TIME\nDay #"+dn+": "+(avgMs?"平均"+avgMs+"ms":"フライング")+"\n🔥 "+s+"日連続チャレンジ中！\nあなたも試してみて！\n"+shareUrl2;
+  dailyShareText="🏊 SWIM-ON REACTION TIME\nDay #"+dn+": "+rec.target.toFixed(3)+"秒以内を"+rec.total+"回中"+rec.need+"回チャレンジ\n結果: "+(rec.cleared?"✅クリア！":"❌未達成")+"\n🔥 "+s+"日連続チャレンジ中！\nあなたも試してみて！\n"+shareUrl2;
   updateDailyHomeInfo();
   show("dailyResult");
 }
