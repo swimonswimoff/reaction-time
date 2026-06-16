@@ -124,6 +124,25 @@ button{font-family:inherit;cursor:pointer;border:0}
   .resultTime{font-size:66px}
   .goldRing{width:220px;height:220px}
 }
+/* daily challenge */
+.dailyBtn{width:100%;border-radius:999px;background:linear-gradient(180deg,var(--purple),#5A35C8);color:#fff;padding:14px 16px;font-size:15px;font-weight:950;letter-spacing:.06em;box-shadow:0 8px 20px rgba(122,85,232,.22);margin-top:12px;border:0;cursor:pointer}
+.dailyMeta{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:8px;padding:0 4px}
+.dailyDayLabel{font-size:12px;font-weight:900;color:var(--purple)}
+.dailyStreakLabel{font-size:12px;font-weight:900;color:var(--purple)}
+.dailyTrialsBadge{font-size:13px;font-weight:950;color:var(--purple);text-align:center;margin-bottom:6px;letter-spacing:.04em}
+/* ranking additions */
+.nameWrap{width:100%;margin-top:10px;display:flex;gap:8px;align-items:center}
+.nameInput{flex:1;border:2px solid var(--blue);border-radius:999px;padding:11px 18px;font-size:15px;font-weight:900;font-family:inherit;color:var(--text);outline:none;background:#fff}
+.nameInput::placeholder{color:var(--muted)}
+.rankSection{width:100%;margin-top:10px;position:relative;z-index:2}
+.rankSectionTitle{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;text-align:left}
+.rankRow{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;padding:7px 11px;margin-bottom:5px;background:#fff;font-size:13px;gap:6px}
+.rankRow.me{border-color:var(--blue);background:var(--blue-light)}
+.rankNum{font-weight:950;color:var(--muted);width:22px;flex-shrink:0;text-align:right}
+.rankName{font-weight:900;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rankTime{font-weight:950;color:var(--blue);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;flex-shrink:0}
+.rankFly{color:var(--danger)}
+#result .center{overflow-y:auto;-webkit-overflow-scrolling:touch}
 </style>
 </head>
 <body>
@@ -142,8 +161,11 @@ button{font-family:inherit;cursor:pointer;border:0}
       <p class="copy2">あなたの反応は何秒？</p>
       <p class="copy3">スタート感覚をゲームしよう！</p>
     </div>
+    <div class="nameWrap"><input class="nameInput" id="playerName" type="text" maxlength="12" placeholder="プレイヤー名（最大12文字）"></div>
     <button class="mainBtn" id="playBtn">PLAY</button>
     <button class="subBtn" id="collectionBtn">称号コレクション</button>
+    <button class="dailyBtn" id="dailyBtn">🗓 デイリーチャレンジ</button>
+    <div class="dailyMeta"><span class="dailyDayLabel" id="dailyDayNum"></span><span class="dailyStreakLabel" id="dailyStreakLabel"></span></div>
     <div class="bestPanel"><div><small>BEST RECORD</small><strong id="homeBest">--.---</strong></div><div style="font-size:26px">⏱</div></div>
     <div class="meta" id="homeMeta">PLAY 0</div>
     <div class="footer">SWIM-ON</div>
@@ -153,6 +175,7 @@ button{font-family:inherit;cursor:pointer;border:0}
     <div class="header"><button class="navBack" id="gameBack">‹</button><button class="sound soundToggle">🔊</button></div>
     <div class="center">
       <div class="brand-small">REACTION TIME</div>
+      <div class="dailyTrialsBadge" id="dailyTrialsBadge" style="display:none"></div>
       <div class="status" id="status">Take Your Marks...</div>
       <div class="waitCircle" id="tapArea">WAIT</div>
       <div class="note" id="note">「ピッ！」のあとにタップ！<br>フライングは失格です</div>
@@ -177,10 +200,29 @@ button{font-family:inherit;cursor:pointer;border:0}
         <div class="rankBox" id="rankBox"></div>
         <div class="infoBox" id="bestLine"></div>
         <div class="infoBox" id="diffBox"></div>
+        <div class="rankSection" id="historySection"><div class="rankSectionTitle">▸ 直近10回の記録</div><div id="historyList"></div></div>
+        <div class="rankSection" id="top10Section"><div class="rankSectionTitle">▸ ローカルTOP10</div><div id="top10List"></div></div>
       </div>
     </div>
     <div class="actions"><button class="actionBtn" id="againBtn">もう一回</button><button class="actionBtn primary" id="shareBtn">シェア</button></div>
     <button class="subBtn" id="toCollectionBtn">称号を見る</button>
+    <button class="subBtn" id="resetRankBtn" style="margin-top:6px;color:var(--muted);border-color:var(--muted)">ランキングをリセット</button>
+    <div class="footer">SWIM-ON GAMES</div>
+  </section>
+
+  <section id="dailyResult" class="screen">
+    <div class="header"><button class="navBack" id="dailyResultBack">‹</button><button class="sound soundToggle">🔊</button></div>
+    <div class="center" style="overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div class="brand-small">DAILY CHALLENGE</div>
+      <div class="resultWrap">
+        <div class="resultLabel" id="dailyResultLabel"></div>
+        <div class="resultTime"><span id="dailyResultTime">0.000</span><span class="sec">秒</span></div>
+        <div class="rankBox" id="dailyRankBox"></div>
+        <div class="infoBox" id="dailyAttemptsBox" style="margin-top:8px;font-size:13px"></div>
+        <div class="infoBox" id="dailyStreakBox" style="margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="actions"><button class="actionBtn" id="dailyShareBtn">シェア / コピー</button><button class="actionBtn primary" id="dailyHomeBtn">ホームへ</button></div>
     <div class="footer">SWIM-ON GAMES</div>
   </section>
 
@@ -204,8 +246,14 @@ let best=localStorage.getItem("rt_v11_final_best")?Number(localStorage.getItem("
 let plays=Number(localStorage.getItem("rt_v11_final_plays")||0);
 let records=JSON.parse(localStorage.getItem("rt_v11_final_records")||"[]");
 let earned=JSON.parse(localStorage.getItem("rt_v11_final_earned")||"[]");
+let ranking=JSON.parse(localStorage.getItem("rt_v11_ranking")||"[]");
+let savedName=localStorage.getItem("rt_v11_player_name")||"";
 let lastText="REACTION TIME #SWIMONGAMES";
 let lastEarnedTitle=null;
+// ---- Daily Challenge ----
+const DAILY_EPOCH=new Date("2024-01-01T00:00:00").getTime();
+const DAILY_TRIALS=3;
+let isDailyMode=false,dailyAttempts=[],dailyDelays=[],dailyAttemptIdx=0,dailyShareText="";
 const ranks=[
  {min:0,max:.15,title:"🚨 フライング",comment:"審判長がお呼びです",collect:false,fx:"flying"},
  {min:.15,max:.30,title:"🏆 飛び込み職人",comment:"素晴らしいスタートです！",collect:true,fx:"confetti"},
@@ -217,6 +265,95 @@ const ranks=[
  {min:.90,max:99,title:"🏢 まだ招集所",comment:"スタート台までお急ぎください",collect:true,fx:"none"}
 ];
 function el(id){return document.getElementById(id)}
+function getPlayerName(){const v=el("playerName").value.trim();return v||"匿名";}
+function saveRankEntry(name,sec){
+  ranking.push({name,sec,date:new Date().toLocaleString("ja-JP")});
+  ranking.sort((a,b)=>a.sec-b.sec);
+  ranking=ranking.slice(0,50);
+  localStorage.setItem("rt_v11_ranking",JSON.stringify(ranking));
+}
+function renderRanking(currentSec,currentName){
+  // history: last 10 legal records
+  const hist=records.filter(r=>r.legal).slice(0,10);
+  el("historyList").innerHTML=hist.length===0?"<div style='font-size:12px;color:var(--muted);padding:4px 0'>記録なし</div>":
+    hist.map((r,i)=>"<div class='rankRow"+(i===0?" me":"")+"'><span class='rankNum'>"+(i+1)+"</span><span class='rankName'>"+r.date+"</span><span class='rankTime'>"+r.sec.toFixed(3)+"秒</span></div>").join("");
+  // top10 from ranking
+  const top10=ranking.slice(0,10);
+  const myPos=ranking.findIndex(r=>r.sec===currentSec&&r.name===currentName);
+  el("top10List").innerHTML=top10.length===0?"<div style='font-size:12px;color:var(--muted);padding:4px 0'>記録なし</div>":
+    top10.map((r,i)=>"<div class='rankRow"+(i===myPos?" me":"")+"'><span class='rankNum'>"+(i+1)+"</span><span class='rankName'>"+r.name+"</span><span class='rankTime'>"+r.sec.toFixed(3)+"秒</span></div>").join("");
+}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function dayNum(){const t=new Date(todayStr()).getTime();return Math.floor((t-DAILY_EPOCH)/86400000)+1}
+function seededRand(seed){seed=(Math.imul(1664525,seed)+1013904223)>>>0;return{v:seed/0x100000000,s:seed}}
+function dailySeed(){const s=todayStr();let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h>>>0}
+function getDailyDelays(){let s=dailySeed();const d=[];for(let i=0;i<DAILY_TRIALS;i++){const r=seededRand(s);d.push(2200+r.v*2500);s=r.s;}return d}
+function getDailyRec(){return JSON.parse(localStorage.getItem("rt_v11_daily_"+todayStr())||"null")}
+function saveDailyRec(attempts){
+  const legal=attempts.filter(a=>a>=0.150);
+  const avg=legal.length>0?legal.reduce((a,b)=>a+b,0)/legal.length:null;
+  const rec={attempts,avg};
+  localStorage.setItem("rt_v11_daily_"+todayStr(),JSON.stringify(rec));
+  const streak=JSON.parse(localStorage.getItem("rt_v11_daily_streak")||'{"last":"","count":0}');
+  const today=todayStr();
+  const yd=new Date(new Date(today).getTime()-86400000);
+  const ydStr=yd.getFullYear()+"-"+String(yd.getMonth()+1).padStart(2,"0")+"-"+String(yd.getDate()).padStart(2,"0");
+  if(streak.last!==today){streak.count=(streak.last===ydStr)?streak.count+1:1;streak.last=today;localStorage.setItem("rt_v11_daily_streak",JSON.stringify(streak));}
+  return rec;
+}
+function getStreak(){
+  const streak=JSON.parse(localStorage.getItem("rt_v11_daily_streak")||'{"last":"","count":0}');
+  const today=todayStr();
+  const yd=new Date(new Date(today).getTime()-86400000);
+  const ydStr=yd.getFullYear()+"-"+String(yd.getMonth()+1).padStart(2,"0")+"-"+String(yd.getDate()).padStart(2,"0");
+  if(streak.last!==today&&streak.last!==ydStr)return 0;
+  return streak.count;
+}
+function updateDailyHomeInfo(){
+  const dn=dayNum(),rec=getDailyRec(),s=getStreak();
+  el("dailyDayNum").textContent="Day #"+dn+(rec?" ✓":"");
+  el("dailyStreakLabel").textContent=s>0?"🔥 "+s+"日連続":"";
+  el("dailyBtn").textContent=rec?"🗓 Day #"+dn+" の結果を見る":"🗓 デイリーチャレンジ　Day #"+dn;
+}
+function startDailyChallenge(){
+  const rec=getDailyRec();
+  if(rec){showDailyResult(rec);return;}
+  isDailyMode=true;dailyAttempts=[];dailyDelays=getDailyDelays();dailyAttemptIdx=0;
+  startDailyAttempt();
+}
+function startDailyAttempt(){
+  state="waiting";show("game");playMarksAudio();
+  el("status").textContent="Take Your Marks...";el("tapArea").textContent="WAIT";el("tapArea").classList.remove("tap");
+  el("note").innerHTML="「ピッ！」のあとにタップ！<br>フライングは失格です";
+  el("dailyTrialsBadge").style.display="block";
+  el("dailyTrialsBadge").textContent="Day #"+dayNum()+"　試技 "+(dailyAttemptIdx+1)+" / "+DAILY_TRIALS;
+  timer=setTimeout(()=>{state="go";el("status").textContent="ピッ！";el("tapArea").textContent="TAP!";el("tapArea").classList.add("tap");el("note").textContent="今！";beep();startTime=performance.now()},dailyDelays[dailyAttemptIdx]);
+}
+function finishDailyAttempt(sec){
+  state="idle";dailyAttempts.push(sec);dailyAttemptIdx++;
+  if(dailyAttemptIdx<DAILY_TRIALS){
+    el("tapArea").classList.remove("tap");
+    el("note").textContent=sec>=0.150?sec.toFixed(3)+"秒":"フライング";
+    el("status").textContent="次の準備...";
+    setTimeout(()=>startDailyAttempt(),1500);
+  }else{
+    const rec=saveDailyRec(dailyAttempts);
+    isDailyMode=false;el("dailyTrialsBadge").style.display="none";
+    showDailyResult(rec);
+  }
+}
+function showDailyResult(rec){
+  const dn=dayNum(),s=getStreak();
+  const avgMs=rec.avg?Math.round(rec.avg*1000):null;
+  el("dailyResultLabel").textContent="Day #"+dn+" 完了！";
+  if(rec.avg){el("dailyResultTime").textContent=rec.avg.toFixed(3);el("dailyRankBox").innerHTML=rankOf(rec.avg).title+"<small>平均タイム（"+DAILY_TRIALS+"試技）</small>";}
+  else{el("dailyResultTime").textContent="DQ";el("dailyRankBox").innerHTML="😅 全試技フライング<small>失格</small>";}
+  el("dailyAttemptsBox").innerHTML=rec.attempts.map((a,i)=>"#"+(i+1)+": "+(a>=0.150?a.toFixed(3)+"秒":"フライング")).join("　");
+  el("dailyStreakBox").innerHTML=s>0?"🔥 <b>"+s+"日連続</b> チャレンジ！":"今日からストリーク開始！";
+  dailyShareText="Day #"+dn+": "+(avgMs?"平均"+avgMs+"ms":"フライング")+"\n"+rec.attempts.map((a,i)=>"#"+(i+1)+":"+(a>=0.15?Math.round(a*1000)+"ms":"DQ")).join(" ")+"\n#SWIMONGAMES";
+  updateDailyHomeInfo();
+  show("dailyResult");
+}
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));el(id).classList.add("active")}
 function rankOf(sec){return ranks.find(r=>sec>=r.min&&sec<r.max)||ranks[ranks.length-1]}
 function beep(freq=1250,dur=130){if(!audioOn)return;try{const Ctx=window.AudioContext||window.webkitAudioContext,ctx=new Ctx(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.frequency.value=freq;gain.gain.value=.12;osc.connect(gain);gain.connect(ctx.destination);osc.start();setTimeout(()=>{osc.stop();ctx.close()},dur)}catch(e){}}
@@ -261,6 +398,10 @@ function finish(sec){
   localStorage.setItem("rt_v11_final_records",JSON.stringify(records));
   localStorage.setItem("rt_v11_final_earned",JSON.stringify(earned));
   localStorage.setItem("rt_v11_final_plays",String(plays));
+  const pname=getPlayerName();
+  savedName=pname;
+  localStorage.setItem("rt_v11_player_name",pname);
+  if(legal)saveRankEntry(pname,sec);
 
   el("resultTime").textContent=legal?sec.toFixed(3):"DQ";
   el("newRecord").classList.remove("danger");
@@ -274,6 +415,7 @@ function finish(sec){
   else el("diffBox").innerHTML="自己ベストまで あと <b>"+(sec-best).toFixed(3)+"</b> 秒！";
   lastText="REACTION TIME｜"+(legal?sec.toFixed(3)+"秒":"フライング")+"\n"+r.title+"\n#SWIMONGAMES";
   updateBest();
+  renderRanking(sec,pname);
   show("result");
   applyFx(r,isNew,isFirstEarn);
 }
@@ -294,18 +436,34 @@ function renderCollection(){
 async function share(){if(navigator.share){try{await navigator.share({text:lastText})}catch(e){}}else if(navigator.clipboard){await navigator.clipboard.writeText(lastText);alert("結果をコピーしました！")}else alert(lastText)}
 function toggleSound(){audioOn=!audioOn;document.querySelectorAll(".soundToggle").forEach(b=>b.textContent=audioOn?"🔊":"🔇");if(audioOn)beep(1000,80)}
 function resetAll(){if(confirm("記録をリセットしますか？")){localStorage.removeItem("rt_v11_final_best");localStorage.removeItem("rt_v11_final_plays");localStorage.removeItem("rt_v11_final_records");localStorage.removeItem("rt_v11_final_earned");best=null;plays=0;records=[];earned=[];updateBest();renderCollection();}}
+function resetRanking(){if(confirm("ランキングをリセットしますか？")){localStorage.removeItem("rt_v11_ranking");ranking=[];renderRanking(null,null);}}
 el("playBtn").onclick=startGame;
 el("againBtn").onclick=startGame;
-el("tapArea").onclick=()=>{if(state==="waiting"){clearTimeout(timer);finish(.001)}else if(state==="go")finish((performance.now()-startTime)/1000)};
-el("gameBack").onclick=()=>{if(timer)clearTimeout(timer);state="idle";show("home")};
+el("tapArea").onclick=()=>{
+  if(state==="waiting"){clearTimeout(timer);isDailyMode?finishDailyAttempt(.001):finish(.001);}
+  else if(state==="go"){const t=(performance.now()-startTime)/1000;isDailyMode?finishDailyAttempt(t):finish(t);}
+};
+el("gameBack").onclick=()=>{if(timer)clearTimeout(timer);state="idle";isDailyMode=false;el("dailyTrialsBadge").style.display="none";show("home")};
 el("resultBack").onclick=()=>show("home");
 el("collectionBtn").onclick=()=>{renderCollection();show("collection")};
 el("toCollectionBtn").onclick=()=>{renderCollection();show("collection")};
 el("collectionBack").onclick=()=>show("home");
 el("shareBtn").onclick=share;
 el("resetBtn").onclick=resetAll;
+el("resetRankBtn").onclick=resetRanking;
+el("dailyBtn").onclick=startDailyChallenge;
+el("dailyResultBack").onclick=()=>show("home");
+el("dailyHomeBtn").onclick=()=>show("home");
+el("dailyShareBtn").onclick=async()=>{
+  if(navigator.share){try{await navigator.share({text:dailyShareText})}catch(e){}}
+  else if(navigator.clipboard){await navigator.clipboard.writeText(dailyShareText);alert("コピーしました！")}
+  else alert(dailyShareText);
+};
 document.querySelectorAll(".soundToggle").forEach(b=>b.onclick=toggleSound);
+el("playerName").value=savedName;
+el("playerName").addEventListener("change",()=>{localStorage.setItem("rt_v11_player_name",el("playerName").value.trim());});
 updateBest();
+updateDailyHomeInfo();
 </script>
 </body>
 </html>
