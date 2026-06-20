@@ -290,21 +290,32 @@ function seededRand(seed){seed=(Math.imul(1664525,seed)+1013904223)>>>0;return{v
 function dailySeed(){const s=todayStr();let h=0;for(let i=0;i<s.length;i++)h=Math.imul(31,h)+s.charCodeAt(i)|0;return h>>>0}
 function getDailyTask(){
   let s=dailySeed();
-  const targets=[0.25,0.30,0.35,0.40,0.45];
+  const targets=[0.30,0.35,0.40,0.45,0.50];
   const patterns=[{total:3,need:2},{total:5,need:3}];
   let r=seededRand(s);s=r.s;
-  const target=targets[Math.floor(r.v*targets.length)%targets.length];
+  const target=targets[Math.min(Math.floor(r.v*targets.length),targets.length-1)];
   r=seededRand(s);s=r.s;
-  const pat=patterns[Math.floor(r.v*patterns.length)%patterns.length];
+  const pat=patterns[Math.min(Math.floor(r.v*patterns.length),patterns.length-1)];
   const delays=[];
   for(let i=0;i<pat.total;i++){r=seededRand(s);s=r.s;delays.push(2200+r.v*2500);}
-  return{target,total:pat.total,need:pat.need,delays};
+  return{target,total:pat.total,need:pat.need,delays,difficulty:calcDifficulty(target,pat.need,pat.total)};
+}
+function calcDifficulty(target,need,total){
+  // tScore: 0(easy,0.50秒) → 4(hard,0.30秒)
+  const tScore=Math.round((0.50-target)/0.05);
+  // rScore: 2/3≈0.667 → 3, 3/5=0.6 → 2
+  const rs=need/total>0.65?3:2;
+  const score=tScore+rs;
+  if(score<=2)return"🟢やさしい";
+  if(score<=4)return"🟡普通";
+  if(score<=6)return"🟠難しい";
+  return"🔴激辛";
 }
 function getDailyRec(){return JSON.parse(localStorage.getItem("rt_v11_daily_"+todayStr())||"null")}
 function saveDailyRec(attempts,successFlags,task){
   const successCount=successFlags.filter(Boolean).length;
   const cleared=successCount>=task.need;
-  const rec={attempts,successFlags,target:task.target,total:task.total,need:task.need,cleared};
+  const rec={attempts,successFlags,target:task.target,total:task.total,need:task.need,cleared,difficulty:task.difficulty};
   localStorage.setItem("rt_v11_daily_"+todayStr(),JSON.stringify(rec));
   const streak=JSON.parse(localStorage.getItem("rt_v11_daily_streak")||'{"last":"","count":0}');
   const today=todayStr();
@@ -331,7 +342,7 @@ function startDailyChallenge(){
   const rec=getDailyRec();
   if(rec){showDailyResult(rec);return;}
   dailyTask=getDailyTask();
-  alert("Day #"+dayNum()+"のチャレンジ\n"+dailyTask.target.toFixed(3)+"秒以内を"+dailyTask.total+"回中"+dailyTask.need+"回出せ！");
+  alert("Day #"+dayNum()+"のチャレンジ: "+dailyTask.difficulty+"\n"+dailyTask.target.toFixed(3)+"秒以内を"+dailyTask.total+"回中"+dailyTask.need+"回出せ！");
   isDailyMode=true;dailyAttempts=[];dailySuccessFlags=[];dailyAttemptIdx=0;
   startDailyAttempt();
 }
@@ -364,11 +375,11 @@ function showDailyResult(rec){
   el("dailyResultLabel").textContent="Day #"+dn+" チャレンジ結果";
   el("dailyResultTime").textContent=successCount+" / "+rec.total;
   el("dailyResultUnit").textContent="回成功";
-  el("dailyRankBox").innerHTML=(rec.cleared?"✅ クリア！":"❌ 未達成（また明日チャレンジ！）")+"<small>目標 "+rec.target.toFixed(3)+"秒以内を"+rec.total+"回中"+rec.need+"回</small>";
+  el("dailyRankBox").innerHTML=(rec.cleared?"✅ クリア！":"❌ 未達成（また明日チャレンジ！）")+"<small>"+(rec.difficulty||"")+" 目標 "+rec.target.toFixed(3)+"秒以内を"+rec.total+"回中"+rec.need+"回</small>";
   el("dailyAttemptsBox").innerHTML=rec.attempts.map((a,i)=>"#"+(i+1)+": "+(a>=0.150?a.toFixed(3)+"秒":"フライング")+(rec.successFlags[i]?" ✅":" ❌")).join("　");
   el("dailyStreakBox").innerHTML=s>0?"🔥 <b>"+s+"日連続</b> チャレンジ！":"今日からストリーク開始！";
   const shareUrl2="https://swimonswimoff.github.io/reaction-time/reaction_time_v1_2_audio.html";
-  dailyShareText="🏊 SWIM-ON REACTION TIME\nDay #"+dn+": "+rec.target.toFixed(3)+"秒以内を"+rec.total+"回中"+rec.need+"回チャレンジ\n結果: "+(rec.cleared?"✅クリア！":"❌未達成")+"\n🔥 "+s+"日連続チャレンジ中！\nあなたも試してみて！\n"+shareUrl2;
+  dailyShareText="🏊 SWIM-ON REACTION TIME\nDay #"+dn+": "+(rec.difficulty||"")+" チャレンジ\n"+rec.target.toFixed(3)+"秒以内を"+rec.total+"回中"+rec.need+"回\n結果: "+(rec.cleared?"✅クリア！":"❌未達成")+"\n🔥 "+s+"日連続チャレンジ中！\nあなたも試してみて！\n"+shareUrl2;
   updateDailyHomeInfo();
   show("dailyResult");
 }
