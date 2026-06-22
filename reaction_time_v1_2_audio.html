@@ -342,14 +342,14 @@ function startDailyChallenge(){
   const rec=getDailyRec();
   if(rec){showDailyResult(rec);return;}
   dailyTask=getDailyTask();
-  alert("Day #"+dayNum()+"のチャレンジ: "+dailyTask.difficulty+"\n"+dailyTask.target.toFixed(3)+"秒以内を"+dailyTask.total+"回中"+dailyTask.need+"回出せ！");
   isDailyMode=true;dailyAttempts=[];dailySuccessFlags=[];dailyAttemptIdx=0;
   startDailyAttempt();
 }
 function startDailyAttempt(){
   state="waiting";show("game");playMarksAudio();
   el("status").textContent="Take Your Marks...";el("tapArea").textContent="WAIT";el("tapArea").classList.remove("tap");
-  el("note").innerHTML="「ピッ！」のあとにタップ！<br>フライングは失格です";
+  const taskDesc=dailyTask.difficulty+"　"+dailyTask.target.toFixed(3)+"秒以内を"+dailyTask.total+"回中"+dailyTask.need+"回";
+  el("note").innerHTML=(dailyAttemptIdx===0?"<b>Day #"+dayNum()+"のチャレンジ</b><br>":"")+"目標: "+taskDesc;
   el("dailyTrialsBadge").style.display="block";
   el("dailyTrialsBadge").textContent="Day #"+dayNum()+"　"+dailyTask.target.toFixed(3)+"秒以内　"+(dailyAttemptIdx+1)+" / "+dailyTask.total;
   timer=setTimeout(()=>{state="go";el("status").textContent="ピッ！";el("tapArea").textContent="TAP!";el("tapArea").classList.add("tap");el("note").textContent="今！";beep();startTime=performance.now()},dailyTask.delays[dailyAttemptIdx]);
