@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>日程調整くん | SWIM-ON GAMES</title>
+<meta name="description" content="候補日にチェックするだけ。みんなの都合がいい日がすぐわかる、かんたん日程調整アプリ。">
+<style>
+:root{
+  --blue:#005FE8;
+  --blue-dark:#0046B8;
+  --blue-light:#EAF5FF;
+  --text:#06326F;
+  --muted:#6B82A3;
+  --line:#D9E9FF;
+  --danger:#E94242;
+  --good:#1FA463;
+  --good-light:#E7F8EF;
+  --white:#fff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#F4F8FF;color:var(--text)}
+button{font-family:inherit;cursor:pointer;border:0;background:none}
+input,textarea{font-family:inherit}
+.app{width:min(480px,100%);min-height:100svh;margin:0 auto;background:#fff;position:relative;display:flex;flex-direction:column}
+.screen{display:none;min-height:100svh;padding:22px 20px 40px;flex-direction:column}
+.screen.active{display:flex}
+.header{display:flex;align-items:center;justify-content:space-between;min-height:46px;margin-bottom:6px}
+.brand{font-size:12px;font-weight:900;letter-spacing:.18em;color:var(--blue)}
+.title{margin:2px 0 18px;color:var(--blue);font-size:26px;font-weight:900;letter-spacing:.02em}
+.subtitle{margin:-12px 0 18px;color:var(--muted);font-size:13px;line-height:1.6}
+label.field-label{display:block;font-size:13px;font-weight:800;color:var(--text);margin:16px 0 6px}
+input.text,textarea.text{width:100%;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;color:var(--text);background:var(--blue-light);outline:none}
+input.text:focus,textarea.text:focus{border-color:var(--blue)}
+textarea.text{min-height:120px;resize:vertical;line-height:1.7}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+.btn{display:block;width:100%;text-align:center;padding:14px 16px;border-radius:14px;font-size:15px;font-weight:900;margin-top:18px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:active{background:var(--blue-dark)}
+.btn-ghost{background:var(--blue-light);color:var(--blue)}
+.btn-outline{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn-sm{width:auto;display:inline-block;padding:9px 14px;font-size:13px;margin-top:0;border-radius:10px}
+.event-card{background:var(--blue-light);border-radius:16px;padding:16px 16px;margin-bottom:16px}
+.event-card h2{margin:0 0 4px;font-size:19px;color:var(--text)}
+.event-card .meta{font-size:12px;color:var(--muted)}
+.decided-banner{background:var(--good);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px}
+.decided-banner .big{font-size:16px}
+.share-box{display:flex;gap:8px;align-items:center;background:var(--blue-light);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.share-box input{flex:1;border:0;background:transparent;font-size:12px;color:var(--muted);outline:none}
+.copy-toast{font-size:12px;color:var(--good);font-weight:800;min-height:16px;margin:2px 2px 12px}
+.table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:100%}
+th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th{background:var(--blue-light);color:var(--blue);font-size:12px;position:sticky;top:0}
+th.date-col,td.date-col{text-align:left;position:sticky;left:0;background:#fff;font-weight:800;min-width:130px}
+thead th.date-col{background:var(--blue-light)}
+tr.best td{background:var(--good-light)}
+tr.best td.date-col{background:var(--good-light)}
+tr.decided td{background:#FFF6D8}
+tr.decided td.date-col{background:#FFF6D8}
+.mark-ok{color:var(--good);font-weight:900;font-size:16px}
+.mark-ng{color:#C7D3E6;font-weight:900;font-size:16px}
+.count-badge{font-weight:900;color:var(--blue)}
+.tag{display:inline-block;font-size:10px;font-weight:900;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.tag-best{background:var(--good);color:#fff}
+.tag-next{background:var(--blue);color:#fff}
+.tag-decided{background:#E2A400;color:#fff}
+.decide-btn{font-size:11px;padding:6px 9px;border-radius:8px;background:#fff;border:1.5px solid var(--blue);color:var(--blue);font-weight:800}
+.checklist{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.check-row{display:flex;align-items:center;justify-content:space-between;background:var(--blue-light);border-radius:10px;padding:10px 12px;font-size:14px}
+.check-row .lbl{font-weight:700}
+.switch{width:46px;height:26px;border-radius:999px;background:#C7D3E6;position:relative;transition:.15s;flex-shrink:0}
+.switch.on{background:var(--good)}
+.switch::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch.on::after{left:23px}
+.respondents{margin-top:16px}
+.respondents .r-row{font-size:13px;color:var(--muted);padding:6px 0;border-bottom:1px dashed var(--line)}
+.footer-link{text-align:center;margin-top:22px;font-size:12px;color:var(--muted)}
+.footer-link a{color:var(--blue);font-weight:800;text-decoration:none}
+.errbox{background:#FFEAEA;color:var(--danger);border-radius:10px;padding:10px 12px;font-size:12px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SCREEN 1: イベント作成 -->
+  <section id="screen-create" class="screen">
+    <div class="header"><span class="brand">SWIM-ON GAMES</span></div>
+    <div class="title">日程調整くん</div>
+    <div class="subtitle">候補日を出して、みんなにチェックしてもらうだけ。全員OKの日や次点候補が自動でわかります。</div>
+
+    <label class="field-label">予定のタイトル</label>
+    <input id="in-title" class="text" type="text" placeholder="例：〇〇チーム 定例MTG">
+
+    <label class="field-label">候補日（1行に1つ）</label>
+    <textarea id="in-dates" class="text" placeholder="例：
+8/10(月) 19:00〜
+8/12(水) 20:00〜
+8/15(土) 午前"></textarea>
+    <div class="hint">日付・時間はお好きな書式でOKです。改行で候補を追加できます。</div>
+
+    <button class="btn btn-primary" onclick="createNewEvent()">日程調整をつくる</button>
+    <div id="create-err" class="errbox" style="display:none"></div>
+
+    <div class="footer-link">作成すると共有用リンクが発行されます</div>
+  </section>
+
+  <!-- SCREEN 2: イベント表示・回答 -->
+  <section id="screen-event" class="screen">
+    <div class="header">
+      <span class="brand">SWIM-ON GAMES</span>
+      <button class="btn-outline btn-sm" onclick="resetToCreate()">＋新規作成</button>
+    </div>
+
+    <div id="decided-banner" class="decided-banner" style="display:none"></div>
+
+    <div class="event-card">
+      <h2 id="ev-title"></h2>
+      <div class="meta" id="ev-meta"></div>
+    </div>
+
+    <label class="field-label">リンクをコピーして共有</label>
+    <div class="share-box">
+      <input id="share-url" type="text" readonly>
+      <button class="btn-outline btn-sm" onclick="copyLink()">コピー</button>
+    </div>
+    <div id="copy-toast" class="copy-toast"></div>
+
+    <label class="field-label">回答状況</label>
+    <div class="table-wrap">
+      <table id="result-table"></table>
+    </div>
+
+    <div class="respondents" id="respondents-box"></div>
+
+    <label class="field-label" style="margin-top:22px">あなたの名前</label>
+    <input id="in-name" class="text" type="text" placeholder="例：しらいし">
+
+    <div id="checklist" class="checklist"></div>
+
+    <button class="btn btn-primary" onclick="submitResponse()">この内容で回答する</button>
+    <div id="respond-err" class="errbox" style="display:none"></div>
+
+    <div class="footer-link">回答すると自動でリンクが更新されます。更新後のリンクをもう一度共有してください。</div>
+  </section>
+
+</div>
+
+<script>
+const STORAGE_PREFIX = 'schedule_adjust_';
+
+function encodeState(state){
+  const json = JSON.stringify(state);
+  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodeState(str){
+  try{
+    let s = str.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length % 4) s += '=';
+    const json = decodeURIComponent(escape(atob(s)));
+    return JSON.parse(json);
+  }catch(e){ return null; }
+}
+function uid(){
+  return Math.random().toString(36).slice(2,9);
+}
+
+let currentState = null;
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function createNewEvent(){
+  const title = document.getElementById('in-title').value.trim();
+  const rawDates = document.getElementById('in-dates').value.split('\n').map(d=>d.trim()).filter(Boolean);
+  const err = document.getElementById('create-err');
+  if(!title){ err.style.display='block'; err.textContent='タイトルを入力してください。'; return; }
+  if(rawDates.length === 0){ err.style.display='block'; err.textContent='候補日を1つ以上入力してください。'; return; }
+  err.style.display='none';
+
+  const state = {
+    id: uid(),
+    title,
+    dates: rawDates,
+    responses: [],
+    decided: null
+  };
+  saveAndOpen(state);
+}
+
+function saveAndOpen(state){
+  currentState = state;
+  localStorage.setItem(STORAGE_PREFIX + state.id, JSON.stringify(state));
+  const hash = '#e=' + encodeState(state);
+  history.replaceState(null, '', hash);
+  renderEvent();
+}
+
+function loadFromHash(){
+  const h = location.hash;
+  if(h.startsWith('#e=')){
+    const state = decodeState(h.slice(3));
+    if(state && state.id){
+      const stored = localStorage.getItem(STORAGE_PREFIX + state.id);
+      if(stored){
+        const local = JSON.parse(stored);
+        if(local.responses.length > state.responses.length) state.responses = local.responses;
+        if(local.decided !== null && state.decided === null) state.decided = local.decided;
+      }
+      currentState = state;
+      localStorage.setItem(STORAGE_PREFIX + state.id, JSON.stringify(state));
+      renderEvent();
+      return true;
+    }
+  }
+  return false;
+}
+
+function resetToCreate(){
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('in-title').value = '';
+  document.getElementById('in-dates').value = '';
+  showScreen('screen-create');
+}
+
+function renderEvent(){
+  const s = currentState;
+  document.getElementById('ev-title').textContent = s.title;
+  document.getElementById('ev-meta').textContent = `候補日 ${s.dates.length}件 ・ 回答者 ${s.responses.length}名`;
+  document.getElementById('share-url').value = location.href;
+
+  const banner = document.getElementById('decided-banner');
+  if(s.decided !== null && s.dates[s.decided] !== undefined){
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span>📅</span><span class="big">日程が決定しました：${escapeHtml(s.dates[s.decided])}</span>`;
+  } else {
+    banner.style.display = 'none';
+  }
+
+  renderTable();
+  renderChecklist();
+  renderRespondents();
+  showScreen('screen-event');
+}
+
+function countsForDates(){
+  const s = currentState;
+  return s.dates.map((_, di) => s.responses.filter(r => r.avail[di]).length);
+}
+
+function renderTable(){
+  const s = currentState;
+  const counts = countsForDates();
+  const total = s.responses.length;
+  const maxCount = total > 0 ? Math.max(...counts) : 0;
+
+  let html = '<thead><tr><th class="date-col">候補日</th>';
+  s.responses.forEach(r => { html += `<th>${escapeHtml(r.name)}</th>`; });
+  html += '<th>結果</th></tr></thead><tbody>';
+
+  s.dates.forEach((d, di) => {
+    const c = counts[di];
+    const isAll = total > 0 && c === total;
+    const isNext = total > 0 && c === maxCount && maxCount > 0 && !isAll;
+    const isDecided = s.decided === di;
+    let rowClass = '';
+    if(isDecided) rowClass = 'decided';
+    else if(isAll) rowClass = 'best';
+
+    html += `<tr class="${rowClass}"><td class="date-col">${escapeHtml(d)}`;
+    if(isDecided) html += '<span class="tag tag-decided">決定</span>';
+    else if(isAll) html += '<span class="tag tag-best">全員OK</span>';
+    else if(isNext) html += '<span class="tag tag-next">次点候補</span>';
+    html += '</td>';
+
+    s.responses.forEach(r => {
+      html += `<td>${r.avail[di] ? '<span class="mark-ok">○</span>' : '<span class="mark-ng">×</span>'}</td>`;
+    });
+
+    html += `<td><span class="count-badge">${c}${total ? '/' + total : ''}</span>`;
+    if(total > 0 && s.decided === null){
+      html += `<button class="decide-btn" onclick="decideDate(${di})">この日に決定</button>`;
+    }
+    html += '</td></tr>';
+  });
+
+  html += '</tbody>';
+  document.getElementById('result-table').innerHTML = html;
+}
+
+function renderChecklist(){
+  const s = currentState;
+  const box = document.getElementById('checklist');
+  box.innerHTML = '';
+  s.dates.forEach((d, di) => {
+    const row = document.createElement('div');
+    row.className = 'check-row';
+    row.innerHTML = `<span class="lbl">${escapeHtml(d)}</span><span class="switch" data-i="${di}" onclick="toggleSwitch(this)"></span>`;
+    box.appendChild(row);
+  });
+}
+
+function toggleSwitch(el){
+  el.classList.toggle('on');
+}
+
+function renderRespondents(){
+  const s = currentState;
+  const box = document.getElementById('respondents-box');
+  if(s.responses.length === 0){ box.innerHTML = ''; return; }
+  let html = '<label class="field-label">回答済みメンバー</label>';
+  s.responses.forEach(r => {
+    const okCount = r.avail.filter(Boolean).length;
+    html += `<div class="r-row">${escapeHtml(r.name)}（${okCount}/${s.dates.length}件 OK）</div>`;
+  });
+  box.innerHTML = html;
+}
+
+function submitResponse(){
+  const s = currentState;
+  const nameInput = document.getElementById('in-name');
+  const name = nameInput.value.trim();
+  const err = document.getElementById('respond-err');
+  if(!name){ err.style.display='block'; err.textContent='名前を入力してください。'; return; }
+  err.style.display='none';
+
+  const switches = document.querySelectorAll('#checklist .switch');
+  const avail = Array.from(switches).map(el => el.classList.contains('on'));
+
+  const existingIdx = s.responses.findIndex(r => r.name === name);
+  if(existingIdx >= 0) s.responses[existingIdx].avail = avail;
+  else s.responses.push({ name, avail });
+
+  nameInput.value = '';
+  saveAndOpen(s);
+
+  const toast = document.getElementById('copy-toast');
+  toast.textContent = '回答しました。最新のリンクを共有してください。';
+  setTimeout(() => { toast.textContent=''; }, 4000);
+}
+
+function decideDate(di){
+  currentState.decided = di;
+  saveAndOpen(currentState);
+}
+
+function copyLink(){
+  const url = document.getElementById('share-url');
+  url.select();
+  url.setSelectionRange(0, 99999);
+  const toast = document.getElementById('copy-toast');
+  navigator.clipboard && navigator.clipboard.writeText(url.value).then(() => {
+    toast.textContent = 'リンクをコピーしました！';
+    setTimeout(() => { toast.textContent=''; }, 2500);
+  }).catch(() => {
+    document.execCommand('copy');
+    toast.textContent = 'リンクをコピーしました！';
+    setTimeout(() => { toast.textContent=''; }, 2500);
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+(function init(){
+  if(!loadFromHash()){
+    showScreen('screen-create');
+  }
+})();
+</script>
+</body>
+</html>
