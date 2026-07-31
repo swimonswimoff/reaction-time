@@ -153,26 +153,27 @@ tr.decided td.date-col{background:#FFF6D8}
     <button class="btn btn-primary" onclick="submitResponse()">この内容で回答する</button>
     <div id="respond-err" class="errbox" style="display:none"></div>
 
-    <div class="footer-link">回答すると自動でリンクが更新されます。更新後のリンクをもう一度共有してください。</div>
+    <div class="footer-link">回答は自動でみんなの画面に反映されます。リンクは最初の1回共有するだけでOKです。</div>
   </section>
 
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script>
-const STORAGE_PREFIX = 'schedule_adjust_';
+const firebaseConfig = {
+  apiKey: "AIzaSyAwk3FljL_fImGGmgnjuX_gL2jbEg_On0M",
+  authDomain: "schedule-app-738a8.firebaseapp.com",
+  databaseURL: "https://schedule-app-738a8-default-rtdb.firebaseio.com",
+  projectId: "schedule-app-738a8",
+  storageBucket: "schedule-app-738a8.firebasestorage.app",
+  messagingSenderId: "665598624165",
+  appId: "1:665598624165:web:6d58ccdcfc51d3af49284c"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+let eventRef = null;
 
-function encodeState(state){
-  const json = JSON.stringify(state);
-  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function decodeState(str){
-  try{
-    let s = str.replace(/-/g,'+').replace(/_/g,'/');
-    while(s.length % 4) s += '=';
-    const json = decodeURIComponent(escape(atob(s)));
-    return JSON.parse(json);
-  }catch(e){ return null; }
-}
 function uid(){
   return Math.random().toString(36).slice(2,9);
 }
@@ -232,39 +233,39 @@ function createNewEvent(){
   if(draftDates.length === 0){ err.style.display='block'; err.textContent='候補日を1つ以上追加してください。'; return; }
   err.style.display='none';
 
+  const id = uid();
   const state = {
-    id: uid(),
+    id,
     title,
     dates: draftDates.slice(),
     responses: [],
     decided: null
   };
   draftDates = [];
-  saveAndOpen(state);
+  db.ref('events/' + id).set(state);
+  history.replaceState(null, '', '#id=' + id);
+  subscribeToEvent(id);
 }
 
-function saveAndOpen(state){
-  currentState = state;
-  localStorage.setItem(STORAGE_PREFIX + state.id, JSON.stringify(state));
-  const hash = '#e=' + encodeState(state);
-  history.replaceState(null, '', hash);
-  renderEvent();
+function subscribeToEvent(id){
+  if(eventRef) eventRef.off();
+  eventRef = db.ref('events/' + id);
+  eventRef.on('value', snapshot => {
+    const val = snapshot.val();
+    if(!val) return;
+    if(!val.responses) val.responses = [];
+    if(val.decided === undefined) val.decided = null;
+    currentState = val;
+    renderEvent();
+  });
 }
 
 function loadFromHash(){
   const h = location.hash;
-  if(h.startsWith('#e=')){
-    const state = decodeState(h.slice(3));
-    if(state && state.id){
-      const stored = localStorage.getItem(STORAGE_PREFIX + state.id);
-      if(stored){
-        const local = JSON.parse(stored);
-        if(local.responses.length > state.responses.length) state.responses = local.responses;
-        if(local.decided !== null && state.decided === null) state.decided = local.decided;
-      }
-      currentState = state;
-      localStorage.setItem(STORAGE_PREFIX + state.id, JSON.stringify(state));
-      renderEvent();
+  if(h.startsWith('#id=')){
+    const id = h.slice(4);
+    if(id){
+      subscribeToEvent(id);
       return true;
     }
   }
@@ -272,6 +273,7 @@ function loadFromHash(){
 }
 
 function resetToCreate(){
+  if(eventRef){ eventRef.off(); eventRef = null; }
   history.replaceState(null, '', location.pathname);
   document.getElementById('in-title').value = '';
   document.getElementById('pick-date').value = '';
@@ -386,21 +388,21 @@ function submitResponse(){
   const switches = document.querySelectorAll('#checklist .switch');
   const avail = Array.from(switches).map(el => el.classList.contains('on'));
 
-  const existingIdx = s.responses.findIndex(r => r.name === name);
-  if(existingIdx >= 0) s.responses[existingIdx].avail = avail;
-  else s.responses.push({ name, avail });
+  const responses = s.responses.slice();
+  const existingIdx = responses.findIndex(r => r.name === name);
+  if(existingIdx >= 0) responses[existingIdx] = { name, avail };
+  else responses.push({ name, avail });
 
   nameInput.value = '';
-  saveAndOpen(s);
+  db.ref('events/' + s.id + '/responses').set(responses);
 
   const toast = document.getElementById('copy-toast');
-  toast.textContent = '回答しました。最新のリンクを共有してください。';
+  toast.textContent = '回答しました！みんなの画面にも自動で反映されます。';
   setTimeout(() => { toast.textContent=''; }, 4000);
 }
 
 function decideDate(di){
-  currentState.decided = di;
-  saveAndOpen(currentState);
+  db.ref('events/' + currentState.id + '/decided').set(di);
 }
 
 function copyLink(){
