@@ -254,7 +254,8 @@ function renderTable(){
   const s = currentState;
   const counts = countsForDates();
   const total = s.responses.length;
-  const maxCount = total > 0 ? Math.max(...counts) : 0;
+  const nonAllCounts = counts.filter(c => c !== total);
+  const maxNonAllCount = nonAllCounts.length > 0 ? Math.max(...nonAllCounts) : 0;
 
   let html = '<thead><tr><th class="date-col">候補日</th>';
   s.responses.forEach(r => { html += `<th>${escapeHtml(r.name)}</th>`; });
@@ -263,7 +264,7 @@ function renderTable(){
   s.dates.forEach((d, di) => {
     const c = counts[di];
     const isAll = total > 0 && c === total;
-    const isNext = total > 0 && c === maxCount && maxCount > 0 && !isAll;
+    const isNext = total > 0 && !isAll && c === maxNonAllCount && maxNonAllCount > 0;
     const isDecided = s.decided === di;
     let rowClass = '';
     if(isDecided) rowClass = 'decided';
