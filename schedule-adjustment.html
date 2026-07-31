@@ -78,11 +78,16 @@ tr.decided td.date-col{background:#FFF6D8}
 .footer-link{text-align:center;margin-top:22px;font-size:12px;color:var(--muted)}
 .footer-link a{color:var(--blue);font-weight:800;text-decoration:none}
 .errbox{background:#FFEAEA;color:var(--danger);border-radius:10px;padding:10px 12px;font-size:12px;margin-top:10px}
-.date-picker-row{display:flex;gap:8px;align-items:stretch}
-.date-picker-row input.text{padding:12px 10px;font-size:14px}
-#pick-date{flex:1.3;min-width:0}
-#pick-time{flex:1;min-width:0}
-.date-add-btn{flex-shrink:0;white-space:nowrap;align-self:center}
+.btn-outline:disabled{opacity:.35;cursor:not-allowed}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.cal-nav .btn-outline{padding:6px 16px}
+.cal-label{font-weight:900;font-size:15px;color:var(--text)}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-top:12px;font-size:11px;color:var(--muted);text-align:center;font-weight:800}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
+.cal-cell{aspect-ratio:1;border-radius:10px;background:var(--blue-light);color:var(--text);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0}
+.cal-cell.empty{background:transparent;cursor:default}
+.cal-cell.past{color:#C7D3E6;background:#F4F8FF;cursor:not-allowed}
+.cal-cell.selected{background:var(--blue);color:#fff}
 .draft-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .draft-empty{font-size:12px;color:var(--muted);padding:10px 2px}
 .draft-chip{display:flex;align-items:center;justify-content:space-between;background:var(--blue-light);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700}
@@ -101,13 +106,17 @@ tr.decided td.date-col{background:#FFF6D8}
     <label class="field-label">予定のタイトル</label>
     <input id="in-title" class="text" type="text" placeholder="例：〇〇チーム 定例MTG">
 
-    <label class="field-label">候補日を追加</label>
-    <div class="date-picker-row">
-      <input id="pick-date" class="text" type="date">
-      <input id="pick-time" class="text" type="time">
-      <button class="btn-outline btn-sm date-add-btn" onclick="addDraftDate()">追加</button>
+    <label class="field-label">時間（任意・すべての候補日に適用されます）</label>
+    <input id="pick-time" class="text" type="time" oninput="renderDraftList()">
+
+    <label class="field-label" style="margin-top:16px">候補日をカレンダーから選択</label>
+    <div class="cal-nav">
+      <button type="button" id="cal-prev" class="btn-outline btn-sm" onclick="changeMonth(-1)">‹</button>
+      <span id="cal-label" class="cal-label"></span>
+      <button type="button" class="btn-outline btn-sm" onclick="changeMonth(1)">›</button>
     </div>
-    <div class="hint">時間は空欄でもOKです（「終日」として追加されます）。カレンダーから選ぶだけで候補日リストに追加されます。</div>
+    <div id="calendar-box"></div>
+    <div class="hint">タップした日が候補日に追加されます。もう一度タップすると解除できます。時間は空欄なら「終日」になります。</div>
 
     <div id="draft-list" class="draft-list"></div>
 
@@ -179,9 +188,17 @@ function uid(){
 }
 
 let currentState = null;
-let draftDates = [];
+let selectedDates = new Set();
+let calYear, calMonth;
 
 const WEEKDAYS = ['日','月','火','水','木','金','土'];
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function dateStrOf(y, m, d){ return `${y}-${pad2(m + 1)}-${pad2(d)}`; }
+function todayDateStr(){
+  const t = new Date();
+  return dateStrOf(t.getFullYear(), t.getMonth(), t.getDate());
+}
 
 function formatDateLabel(dateStr, timeStr){
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -190,35 +207,78 @@ function formatDateLabel(dateStr, timeStr){
   return timeStr ? `${label} ${timeStr}〜` : `${label} 終日`;
 }
 
-function addDraftDate(){
-  const dateInput = document.getElementById('pick-date');
-  const timeInput = document.getElementById('pick-time');
-  const err = document.getElementById('create-err');
-  if(!dateInput.value){ err.style.display='block'; err.textContent='日付を選択してください。'; return; }
+function initCalendar(){
+  const t = new Date();
+  calYear = t.getFullYear();
+  calMonth = t.getMonth();
+  renderCalendar();
+}
 
-  const label = formatDateLabel(dateInput.value, timeInput.value);
-  if(draftDates.includes(label)){ err.style.display='block'; err.textContent='すでに追加済みの候補日です。'; return; }
-  err.style.display='none';
+function changeMonth(diff){
+  calMonth += diff;
+  if(calMonth < 0){ calMonth = 11; calYear--; }
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  renderCalendar();
+}
 
-  draftDates.push(label);
-  timeInput.value = '';
+function renderCalendar(){
+  const first = new Date(calYear, calMonth, 1);
+  const startWeekday = first.getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = todayDateStr();
+
+  document.getElementById('cal-label').textContent = `${calYear}年${calMonth + 1}月`;
+
+  let html = '<div class="cal-weekdays">' + WEEKDAYS.map(w => `<span>${w}</span>`).join('') + '</div><div class="cal-grid">';
+  for(let i = 0; i < startWeekday; i++) html += '<span class="cal-cell empty"></span>';
+  for(let d = 1; d <= daysInMonth; d++){
+    const ds = dateStrOf(calYear, calMonth, d);
+    const isPast = ds < today;
+    const isSelected = selectedDates.has(ds);
+    const cls = ['cal-cell'];
+    if(isPast) cls.push('past');
+    if(isSelected) cls.push('selected');
+    html += `<button type="button" class="${cls.join(' ')}" ${isPast ? 'disabled' : ''} onclick="toggleCalendarDate('${ds}')">${d}</button>`;
+  }
+  html += '</div>';
+  document.getElementById('calendar-box').innerHTML = html;
+
+  const now = new Date();
+  const firstOfThisMonth = dateStrOf(now.getFullYear(), now.getMonth(), 1);
+  const firstOfShown = dateStrOf(calYear, calMonth, 1);
+  document.getElementById('cal-prev').disabled = firstOfShown <= firstOfThisMonth;
+}
+
+function toggleCalendarDate(ds){
+  if(selectedDates.has(ds)) selectedDates.delete(ds);
+  else selectedDates.add(ds);
+  renderCalendar();
   renderDraftList();
 }
 
-function removeDraftDate(idx){
-  draftDates.splice(idx, 1);
+function removeDraftDate(ds){
+  selectedDates.delete(ds);
+  renderCalendar();
   renderDraftList();
+}
+
+function getDraftDateLabels(){
+  const timeVal = document.getElementById('pick-time').value;
+  return Array.from(selectedDates).sort().map(ds => formatDateLabel(ds, timeVal));
 }
 
 function renderDraftList(){
   const box = document.getElementById('draft-list');
-  if(draftDates.length === 0){
-    box.innerHTML = '<div class="draft-empty">候補日はまだありません。カレンダーから選んで追加してください。</div>';
+  const timeVal = document.getElementById('pick-time').value;
+  const sorted = Array.from(selectedDates).sort();
+  if(sorted.length === 0){
+    box.innerHTML = '<div class="draft-empty">候補日はまだありません。カレンダーの日付をタップして選んでください。</div>';
     return;
   }
-  box.innerHTML = draftDates.map((label, i) =>
-    `<div class="draft-chip"><span>${escapeHtml(label)}</span><button class="rm" onclick="removeDraftDate(${i})">×</button></div>`
-  ).join('');
+  box.innerHTML = sorted.map(ds => {
+    const label = formatDateLabel(ds, timeVal);
+    return `<div class="draft-chip"><span>${escapeHtml(label)}</span><button class="rm" onclick="removeDraftDate('${ds}')">×</button></div>`;
+  }).join('');
 }
 
 function showScreen(id){
@@ -229,19 +289,20 @@ function showScreen(id){
 function createNewEvent(){
   const title = document.getElementById('in-title').value.trim();
   const err = document.getElementById('create-err');
+  const dates = getDraftDateLabels();
   if(!title){ err.style.display='block'; err.textContent='タイトルを入力してください。'; return; }
-  if(draftDates.length === 0){ err.style.display='block'; err.textContent='候補日を1つ以上追加してください。'; return; }
+  if(dates.length === 0){ err.style.display='block'; err.textContent='候補日を1つ以上選択してください。'; return; }
   err.style.display='none';
 
   const id = uid();
   const state = {
     id,
     title,
-    dates: draftDates.slice(),
+    dates,
     responses: [],
     decided: null
   };
-  draftDates = [];
+  selectedDates = new Set();
   db.ref('events/' + id).set(state);
   history.replaceState(null, '', '#id=' + id);
   subscribeToEvent(id);
@@ -276,9 +337,9 @@ function resetToCreate(){
   if(eventRef){ eventRef.off(); eventRef = null; }
   history.replaceState(null, '', location.pathname);
   document.getElementById('in-title').value = '';
-  document.getElementById('pick-date').value = '';
   document.getElementById('pick-time').value = '';
-  draftDates = [];
+  selectedDates = new Set();
+  initCalendar();
   renderDraftList();
   showScreen('screen-create');
 }
@@ -425,9 +486,7 @@ function escapeHtml(str){
 }
 
 (function init(){
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  document.getElementById('pick-date').min = todayStr;
+  initCalendar();
   renderDraftList();
   if(!loadFromHash()){
     showScreen('screen-create');
