@@ -43,7 +43,7 @@ textarea.text{min-height:120px;resize:vertical;line-height:1.7}
 .event-card{background:var(--blue-light);border-radius:16px;padding:16px 16px;margin-bottom:16px}
 .event-card h2{margin:0 0 4px;font-size:19px;color:var(--text)}
 .event-card .meta{font-size:12px;color:var(--muted)}
-.decided-banner{background:var(--good);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px}
+.decided-banner{background:var(--good);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-weight:800;font-size:14px;display:flex;flex-direction:column;gap:6px}
 .decided-banner .big{font-size:16px}
 .share-box{display:flex;gap:8px;align-items:center;background:var(--blue-light);border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .share-box input{flex:1;border:0;background:transparent;font-size:12px;color:var(--muted);outline:none}
@@ -146,6 +146,13 @@ tr.decided td.date-col{background:#FFF6D8}
       <button class="btn-outline btn-sm" onclick="copyLink()">コピー</button>
     </div>
     <div id="copy-toast" class="copy-toast"></div>
+
+    <div id="decide-detail-box">
+      <label class="field-label">決定時の詳細（任意）</label>
+      <input id="decide-place" class="text" type="text" placeholder="場所（例：会議室A、渋谷駅前など）">
+      <textarea id="decide-content" class="text" style="min-height:70px;margin-top:8px" placeholder="内容（例：定例ミーティング、持ち物など）"></textarea>
+      <div class="hint">ここに入力した内容は、下の表で「この日に決定」を押したときに一緒に保存されます。</div>
+    </div>
 
     <label class="field-label">回答状況</label>
     <div class="table-wrap">
@@ -351,11 +358,17 @@ function renderEvent(){
   document.getElementById('share-url').value = location.href;
 
   const banner = document.getElementById('decided-banner');
+  const detailBox = document.getElementById('decide-detail-box');
   if(s.decided !== null && s.dates[s.decided] !== undefined){
     banner.style.display = 'flex';
-    banner.innerHTML = `<span>📅</span><span class="big">日程が決定しました：${escapeHtml(s.dates[s.decided])}</span>`;
+    let html = `<div class="big">📅 日程が決定しました：${escapeHtml(s.dates[s.decided])}</div>`;
+    if(s.place) html += `<div>📍 ${escapeHtml(s.place)}</div>`;
+    if(s.content) html += `<div>📝 ${escapeHtml(s.content)}</div>`;
+    banner.innerHTML = html;
+    detailBox.style.display = 'none';
   } else {
     banner.style.display = 'none';
+    detailBox.style.display = 'block';
   }
 
   renderTable();
@@ -463,7 +476,9 @@ function submitResponse(){
 }
 
 function decideDate(di){
-  db.ref('events/' + currentState.id + '/decided').set(di);
+  const place = document.getElementById('decide-place').value.trim();
+  const content = document.getElementById('decide-content').value.trim();
+  db.ref('events/' + currentState.id).update({ decided: di, place, content });
 }
 
 function copyLink(){
