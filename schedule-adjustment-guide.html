@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>使い方ガイド | 日程調整くん</title>
+<meta name="description" content="日程調整くんの使い方。候補日の作り方、回答のしかた、日程の決め方をわかりやすく解説します。">
+<style>
+:root{
+  --blue:#005FE8;
+  --blue-dark:#0046B8;
+  --blue-light:#EAF5FF;
+  --text:#06326F;
+  --muted:#6B82A3;
+  --line:#D9E9FF;
+  --good:#1FA463;
+  --good-light:#E7F8EF;
+}
+*{box-sizing:border-box}
+html,body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#F4F8FF;color:var(--text)}
+.wrap{width:min(560px,100%);margin:0 auto;padding:26px 20px 60px}
+.brand{font-size:12px;font-weight:900;letter-spacing:.18em;color:var(--blue)}
+h1{margin:6px 0 6px;color:var(--blue);font-size:26px;font-weight:900}
+.lead{color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:26px}
+.back{display:inline-block;margin-bottom:18px;font-size:13px;font-weight:800;color:var(--blue);text-decoration:none}
+.section{background:#fff;border-radius:18px;padding:20px 20px 22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(6,50,111,.06)}
+.section h2{margin:0 0 4px;font-size:17px;color:var(--text);display:flex;align-items:center;gap:8px}
+.section .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px;font-weight:900;flex-shrink:0}
+.section .desc{color:var(--muted);font-size:13px;margin:2px 0 14px;line-height:1.7}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps li{background:var(--blue-light);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.7;display:flex;gap:10px}
+.steps li .n{font-weight:900;color:var(--blue);flex-shrink:0}
+.tip{background:var(--good-light);border-radius:12px;padding:12px 14px;font-size:13px;color:#0d6b3f;margin-top:14px;line-height:1.7}
+.tip b{font-weight:900}
+.warn{background:#FFF6D8;border-radius:12px;padding:12px 14px;font-size:13px;color:#7a5b00;margin-top:14px;line-height:1.7}
+.tag-demo{display:inline-block;font-size:10px;font-weight:900;padding:2px 8px;border-radius:999px;color:#fff;margin:0 3px}
+.tag-good{background:var(--good)}
+.tag-next{background:var(--blue)}
+.tag-decided{background:#E2A400}
+.cta{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:900;padding:14px;border-radius:14px;margin-top:8px}
+.cta:active{background:var(--blue-dark)}
+.faq dt{font-weight:900;font-size:14px;margin-top:14px}
+.faq dt:first-child{margin-top:0}
+.faq dd{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="brand">SWIM-ON GAMES</span>
+  <h1>日程調整くん 使い方ガイド</h1>
+  <div class="lead">候補日をカレンダーから選んで、みんなにチェックしてもらうだけ。全員の都合がいい日が自動でわかる、かんたん日程調整アプリです。</div>
+
+  <div class="section">
+    <h2><span class="num">1</span>予定をつくる（主催者）</h2>
+    <div class="desc">まず、日程調整したい予定をつくります。</div>
+    <ul class="steps">
+      <li><span class="n">①</span>予定のタイトルを入力する（例：〇〇チーム 定例MTG）</li>
+      <li><span class="n">②</span>時間を決めている場合は入力する（空欄なら「終日」になります）</li>
+      <li><span class="n">③</span>カレンダーで候補日をタップする（何日でもOK。もう一度タップすると解除できます）</li>
+      <li><span class="n">④</span>「日程調整をつくる」を押す</li>
+    </ul>
+    <div class="tip"><b>ポイント：</b>候補日は後から追加・削除できないので、迷っている日は多めに選んでおくのがおすすめです。</div>
+  </div>
+
+  <div class="section">
+    <h2><span class="num">2</span>リンクを共有する</h2>
+    <div class="desc">予定をつくると、専用のリンクが自動で発行されます。</div>
+    <ul class="steps">
+      <li><span class="n">①</span>「コピー」ボタンでリンクをコピーする</li>
+      <li><span class="n">②</span>LINEグループなど、回答してほしい人たちに送る</li>
+    </ul>
+    <div class="tip"><b>ポイント：</b>リンクは1回送るだけでOKです。誰かが回答すると、リンクを開いている全員の画面に自動で反映されます（送り直す必要はありません）。</div>
+  </div>
+
+  <div class="section">
+    <h2><span class="num">3</span>回答する（参加者）</h2>
+    <div class="desc">送られてきたリンクを開いたら、以下の手順で回答します。</div>
+    <ul class="steps">
+      <li><span class="n">①</span>「あなたの名前」に自分の名前を入力する</li>
+      <li><span class="n">②</span>都合がいい候補日のスイッチをONにする</li>
+      <li><span class="n">③</span>「この内容で回答する」を押す</li>
+    </ul>
+    <div class="tip">予定が変わったときは、同じ名前でもう一度回答すれば、内容が上書きされます。</div>
+  </div>
+
+  <div class="section">
+    <h2><span class="num">4</span>結果を見る</h2>
+    <div class="desc">回答が集まると、表の一番右に人数と自動判定タグが表示されます。</div>
+    <ul class="steps">
+      <li><span class="tag-demo tag-good">全員OK</span>回答した全員の都合がいい日</li>
+      <li><span class="tag-demo tag-next">次点候補</span>全員一致はしていないけれど、一番都合がいい人が多い日</li>
+      <li><span class="tag-demo tag-decided">決定</span>主催者が最終的に選んだ日</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2><span class="num">5</span>日程を決定する（主催者）</h2>
+    <div class="desc">開催日を1つに決めるときの手順です。</div>
+    <ul class="steps">
+      <li><span class="n">①</span>必要であれば「場所」「内容」を入力する（任意）</li>
+      <li><span class="n">②</span>表の中から選んだ日の「この日に決定」ボタンを押す</li>
+    </ul>
+    <div class="tip">決定すると、日時・場所・内容が画面上部にバナーで表示され、全員の画面にも自動で反映されます。</div>
+  </div>
+
+  <div class="section">
+    <h2>よくある質問</h2>
+    <dl class="faq">
+      <dt>Q. リンクを知らない人にも見られますか？</dt>
+      <dd>A. いいえ。リンク（URL）を知っている人だけが開いて回答できます。リンクを共有していない人には見えません。</dd>
+      <dt>Q. 候補日を間違えて選んでしまいました</dt>
+      <dd>A. 予定作成前ならカレンダーをもう一度タップすれば解除できます。予定作成後に候補日自体を変更したい場合は、お手数ですが「＋新規作成」でつくり直してください。</dd>
+      <dt>Q. 決定した日程を変更したい</dt>
+      <dd>A. 現状は決定後の変更には対応していません。変更したい場合は新しく予定をつくり直してください。</dd>
+    </dl>
+  </div>
+
+  <a class="cta" href="schedule-adjustment.html">日程調整くんを開く</a>
+</div>
+</body>
+</html>
