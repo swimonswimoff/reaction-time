@@ -152,10 +152,11 @@ tr.decided td.date-col{background:#FFF6D8}
     <div id="copy-toast" class="copy-toast"></div>
 
     <div id="decide-detail-box" class="decide-card">
-      <div class="decide-card-title">📍 日程を決定するとき（任意）</div>
-      <div class="hint" style="margin-top:0 0 10px">下の表にある「この日に決定」ボタンを押す前に、必要であれば入力してください。ボタンを押した時点の内容が一緒に保存されます。</div>
+      <div id="decide-card-title" class="decide-card-title">📍 日程を決定するとき（任意）</div>
+      <div id="decide-card-hint" class="hint" style="margin-top:0 0 10px">下の表にある「この日に決定」ボタンを押す前に、必要であれば入力してください。ボタンを押した時点の内容が一緒に保存されます。</div>
       <input id="decide-place" class="text" type="text" placeholder="場所（例：会議室A、渋谷駅前など）">
       <textarea id="decide-content" class="text" style="min-height:70px;margin-top:8px" placeholder="内容（例：定例ミーティング、持ち物など）"></textarea>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="saveDecideDetails()">保存する</button>
     </div>
 
     <label class="field-label">回答状況</label>
@@ -362,18 +363,26 @@ function renderEvent(){
   document.getElementById('share-url').value = location.href;
 
   const banner = document.getElementById('decided-banner');
-  const detailBox = document.getElementById('decide-detail-box');
+  const cardTitle = document.getElementById('decide-card-title');
+  const cardHint = document.getElementById('decide-card-hint');
+  const placeInput = document.getElementById('decide-place');
+  const contentInput = document.getElementById('decide-content');
+
   if(s.decided !== null && s.dates[s.decided] !== undefined){
     banner.style.display = 'flex';
     let html = `<div class="big">📅 日程が決定しました：${escapeHtml(s.dates[s.decided])}</div>`;
     if(s.place) html += `<div>📍 ${escapeHtml(s.place)}</div>`;
     if(s.content) html += `<div>📝 ${escapeHtml(s.content)}</div>`;
     banner.innerHTML = html;
-    detailBox.style.display = 'none';
+    cardTitle.textContent = '📍 決定内容を編集';
+    cardHint.textContent = '場所や内容を書いたら「保存する」を押してください。全員の画面にも反映されます。';
   } else {
     banner.style.display = 'none';
-    detailBox.style.display = 'block';
+    cardTitle.textContent = '📍 日程を決定するとき（任意）';
+    cardHint.textContent = '下の表にある「この日に決定」ボタンを押す前に、必要であれば入力してください。決定後もこの欄から編集できます。';
   }
+  if(document.activeElement !== placeInput) placeInput.value = s.place || '';
+  if(document.activeElement !== contentInput) contentInput.value = s.content || '';
 
   renderTable();
   renderChecklist();
@@ -483,6 +492,16 @@ function decideDate(di){
   const place = document.getElementById('decide-place').value.trim();
   const content = document.getElementById('decide-content').value.trim();
   db.ref('events/' + currentState.id).update({ decided: di, place, content });
+}
+
+function saveDecideDetails(){
+  const place = document.getElementById('decide-place').value.trim();
+  const content = document.getElementById('decide-content').value.trim();
+  db.ref('events/' + currentState.id).update({ place, content });
+
+  const toast = document.getElementById('copy-toast');
+  toast.textContent = '保存しました。みんなの画面にも反映されます。';
+  setTimeout(() => { toast.textContent=''; }, 3000);
 }
 
 function copyLink(){
