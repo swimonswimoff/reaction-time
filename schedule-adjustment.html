@@ -44,6 +44,9 @@ textarea.text{min-height:120px;resize:vertical;line-height:1.7}
 .event-card{background:var(--blue-light);border-radius:16px;padding:16px 16px;margin-bottom:16px}
 .event-card h2{margin:0 0 4px;font-size:19px;color:var(--text)}
 .event-card .meta{font-size:12px;color:var(--muted)}
+.decide-card{background:#fff;border:2px solid var(--blue);border-radius:16px;padding:16px;margin-bottom:18px}
+.decide-card-title{font-weight:900;font-size:15px;color:var(--blue);margin-bottom:6px}
+.decide-card .hint{margin-bottom:10px}
 .decided-banner{background:var(--good);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-weight:800;font-size:14px;display:flex;flex-direction:column;gap:6px}
 .decided-banner .big{font-size:16px}
 .share-box{display:flex;gap:8px;align-items:center;background:var(--blue-light);border-radius:12px;padding:10px 12px;margin-bottom:8px}
@@ -148,11 +151,11 @@ tr.decided td.date-col{background:#FFF6D8}
     </div>
     <div id="copy-toast" class="copy-toast"></div>
 
-    <div id="decide-detail-box">
-      <label class="field-label">決定時の詳細（任意）</label>
+    <div id="decide-detail-box" class="decide-card">
+      <div class="decide-card-title">📍 日程を決定するとき（任意）</div>
+      <div class="hint" style="margin-top:0 0 10px">下の表にある「この日に決定」ボタンを押す前に、必要であれば入力してください。ボタンを押した時点の内容が一緒に保存されます。</div>
       <input id="decide-place" class="text" type="text" placeholder="場所（例：会議室A、渋谷駅前など）">
       <textarea id="decide-content" class="text" style="min-height:70px;margin-top:8px" placeholder="内容（例：定例ミーティング、持ち物など）"></textarea>
-      <div class="hint">ここに入力した内容は、下の表で「この日に決定」を押したときに一緒に保存されます。</div>
     </div>
 
     <label class="field-label">回答状況</label>
