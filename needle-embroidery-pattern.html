@@ -326,9 +326,21 @@ canvas#pattern{display:block}
     return '#' + h(r) + h(g) + h(b);
   }
 
-  downloadBtn.addEventListener('click', function(){
+  downloadBtn.addEventListener('click', async function(){
+    var filename = 'needle-embroidery-pattern.png';
+    if(window.claude && typeof window.claude.use === 'function'){
+      try{
+        var downloads = await window.claude.use('downloads');
+        if(downloads){
+          var blob = await new Promise(function(resolve){ patternCanvas.toBlob(resolve, 'image/png'); });
+          try{ await downloads.save({ filename: filename, data: blob }); }
+          catch(e){ /* declined or unavailable */ }
+          return;
+        }
+      }catch(e){ /* fall through to plain download */ }
+    }
     var link = document.createElement('a');
-    link.download = 'needle-embroidery-pattern.png';
+    link.download = filename;
     link.href = patternCanvas.toDataURL('image/png');
     link.click();
   });
