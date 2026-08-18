@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ニードル刺繍図案メーカー | SWIM-ON GAMES</title>
+<meta name="description" content="画像を選ぶだけで、ニードル刺繍・パンチニードル用のドット図案に変換。ドットの大きさや色数はあとから何度でも調整できます。">
+<style>
+:root{
+  --blue:#005FE8;
+  --blue-dark:#0046B8;
+  --blue-light:#EAF5FF;
+  --text:#06326F;
+  --muted:#6B82A3;
+  --line:#D9E9FF;
+  --white:#fff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:#F4F8FF;color:var(--text)}
+button{font-family:inherit;cursor:pointer;border:0;background:none}
+input{font-family:inherit}
+.app{width:min(880px,100%);margin:0 auto;padding:22px 18px 48px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.brand{font-size:12px;font-weight:900;letter-spacing:.18em;color:var(--blue)}
+h1.title{margin:2px 0 8px;color:var(--blue);font-size:24px;font-weight:900;letter-spacing:.02em}
+.subtitle{margin:0 0 22px;color:var(--muted);font-size:13px;line-height:1.7}
+.card{background:#fff;border-radius:16px;padding:18px 18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(6,50,111,.06)}
+.card h2{margin:0 0 12px;font-size:14px;font-weight:900;color:var(--text)}
+.upload-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.upload-btn{background:var(--blue);color:#fff;font-weight:900;font-size:14px;padding:12px 18px;border-radius:12px}
+.upload-btn:active{background:var(--blue-dark)}
+input[type=file]{display:none}
+.thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;border:2px solid var(--line);display:none}
+.file-hint{font-size:12px;color:var(--muted)}
+.field{margin-top:16px}
+.field:first-child{margin-top:0}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px}
+.field-label .val{color:var(--blue);font-weight:900}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.grid-info{font-size:12px;color:var(--muted);margin-top:6px}
+.canvas-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fbfdff;max-height:70vh}
+canvas#pattern{display:block}
+.empty-state{padding:40px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{padding:12px 18px;border-radius:12px;font-size:13px;font-weight:900}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:active{background:var(--blue-dark)}
+.btn-outline{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.legend-head{display:flex;justify-content:space-between;align-items:baseline}
+.legend-count{font-size:12px;color:var(--muted)}
+.legend-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.legend-item{display:flex;align-items:center;gap:8px;background:var(--blue-light);border-radius:10px;padding:8px 10px}
+.swatch{width:26px;height:26px;border-radius:7px;flex-shrink:0;border:1px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}
+.legend-meta{font-size:11px;color:var(--text);line-height:1.5}
+.legend-meta b{font-size:12px}
+.footer{text-align:center;color:var(--blue);font-size:12px;font-weight:900;letter-spacing:.18em;padding-top:8px}
+.status{font-size:12px;color:var(--blue);font-weight:800;margin-top:8px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header"><div class="brand">SWIM-ON GAMES</div></div>
+  <h1 class="title">🧵 ニードル刺繍図案メーカー</h1>
+  <p class="subtitle">好きな画像をドット状の図案に変換します。ドットの大きさや色数はスライダーでいつでも調整でき、同じ画像のまま何度でも作り直せます。</p>
+
+  <div class="card">
+    <h2>1. 画像を選ぶ</h2>
+    <div class="upload-row">
+      <label class="upload-btn">画像を選択<input id="fileInput" type="file" accept="image/*"></label>
+      <img id="thumb" class="thumb" alt="">
+      <span class="file-hint">JPEG / PNG など。端末内で処理され、画像は送信されません。</span>
+    </div>
+  </div>
+
+  <div class="card" id="controlsCard" style="display:none">
+    <h2>2. ドットの大きさ・色数を調整</h2>
+    <div class="field">
+      <div class="field-label"><span>ドットの大きさ</span><span class="val" id="dotSizeVal"></span></div>
+      <input type="range" id="dotSize" min="3" max="40" value="10" step="1">
+      <div class="grid-info" id="gridInfo"></div>
+    </div>
+    <div class="field">
+      <div class="field-label"><span>糸の色数（減色）</span><span class="val" id="colorCountVal"></span></div>
+      <input type="range" id="colorCount" min="2" max="40" value="12" step="1">
+      <div class="grid-info">色数を減らすほど、必要な糸の種類が少なくなります。</div>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card" id="patternCard" style="display:none">
+    <h2>3. 図案</h2>
+    <div class="canvas-wrap"><canvas id="pattern"></canvas></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="downloadBtn">図案をPNGで保存</button>
+    </div>
+  </div>
+
+  <div class="card" id="legendCard" style="display:none">
+    <div class="legend-head"><h2 style="margin:0">糸の色一覧</h2><span class="legend-count" id="legendCount"></span></div>
+    <div class="legend-list" id="legendList"></div>
+  </div>
+
+  <div class="card" id="placeholderCard">
+    <div class="empty-state">まずは上から画像を選んでください。<br>選んだ画像はその場でドット図案に変換されます。</div>
+  </div>
+
+  <div class="footer">SWIM-ON GAMES</div>
+</div>
+
+<script>
+(function(){
+  var MAX_SOURCE_DIM = 480;
+  var srcCtx, srcW, srcH, srcData;
+
+  var fileInput = document.getElementById('fileInput');
+  var thumb = document.getElementById('thumb');
+  var controlsCard = document.getElementById('controlsCard');
+  var patternCard = document.getElementById('patternCard');
+  var legendCard = document.getElementById('legendCard');
+  var placeholderCard = document.getElementById('placeholderCard');
+  var dotSizeInput = document.getElementById('dotSize');
+  var dotSizeVal = document.getElementById('dotSizeVal');
+  var colorCountInput = document.getElementById('colorCount');
+  var colorCountVal = document.getElementById('colorCountVal');
+  var gridInfo = document.getElementById('gridInfo');
+  var status = document.getElementById('status');
+  var patternCanvas = document.getElementById('pattern');
+  var legendList = document.getElementById('legendList');
+  var legendCount = document.getElementById('legendCount');
+  var downloadBtn = document.getElementById('downloadBtn');
+
+  var regenTimer = null;
+
+  fileInput.addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){ onImageLoaded(img); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function onImageLoaded(img){
+    thumb.src = img.src;
+    thumb.style.display = 'block';
+
+    var scale = Math.min(1, MAX_SOURCE_DIM / Math.max(img.width, img.height));
+    srcW = Math.max(1, Math.round(img.width * scale));
+    srcH = Math.max(1, Math.round(img.height * scale));
+
+    var off = document.createElement('canvas');
+    off.width = srcW; off.height = srcH;
+    srcCtx = off.getContext('2d');
+    srcCtx.drawImage(img, 0, 0, srcW, srcH);
+    srcData = srcCtx.getImageData(0, 0, srcW, srcH).data;
+
+    dotSizeInput.max = Math.max(4, Math.floor(Math.min(srcW, srcH) / 3));
+    dotSizeInput.value = Math.max(3, Math.round(Math.min(srcW, srcH) / 40));
+
+    controlsCard.style.display = '';
+    patternCard.style.display = '';
+    legendCard.style.display = '';
+    placeholderCard.style.display = 'none';
+
+    scheduleGenerate(true);
+  }
+
+  dotSizeInput.addEventListener('input', function(){ scheduleGenerate(false); });
+  colorCountInput.addEventListener('input', function(){ scheduleGenerate(false); });
+
+  function scheduleGenerate(immediate){
+    dotSizeVal.textContent = dotSizeInput.value + 'px';
+    colorCountVal.textContent = colorCountInput.value + '色';
+    if(regenTimer) clearTimeout(regenTimer);
+    if(immediate){ generate(); return; }
+    status.textContent = '生成中…';
+    regenTimer = setTimeout(generate, 140);
+  }
+
+  function generate(){
+    var dotSize = parseInt(dotSizeInput.value, 10);
+    var maxColors = parseInt(colorCountInput.value, 10);
+
+    var cols = Math.max(1, Math.floor(srcW / dotSize));
+    var rows = Math.max(1, Math.floor(srcH / dotSize));
+    gridInfo.textContent = '仕上がりサイズ: 横 ' + cols + ' マス × 縦 ' + rows + ' マス';
+
+    var cellColors = new Array(cols * rows);
+    for(var ry = 0; ry < rows; ry++){
+      for(var rx = 0; rx < cols; rx++){
+        cellColors[ry * cols + rx] = averageCell(rx * dotSize, ry * dotSize, dotSize, dotSize);
+      }
+    }
+
+    var k = Math.min(maxColors, cellColors.length);
+    var km = kmeans(cellColors, k, 6);
+    var clusters = km.clusters.map(function(c, i){ return { r: c.r, g: c.g, b: c.b, count: 0, idx: i }; });
+    km.assignments.forEach(function(ci){ clusters[ci].count++; });
+
+    clusters.sort(function(a, b){ return b.count - a.count; });
+    var oldToNew = {};
+    clusters.forEach(function(c, newIdx){ oldToNew[c.idx] = newIdx; c.symbol = String(newIdx + 1); });
+    var finalAssignments = km.assignments.map(function(ci){ return oldToNew[ci]; });
+
+    renderPattern(cols, rows, dotSize, finalAssignments, clusters);
+    renderLegend(clusters, cellColors.length);
+    status.textContent = '';
+  }
+
+  function averageCell(px, py, w, h){
+    var r = 0, g = 0, b = 0, n = 0;
+    var x1 = Math.min(px + w, srcW), y1 = Math.min(py + h, srcH);
+    for(var y = py; y < y1; y++){
+      var rowOff = y * srcW * 4;
+      for(var x = px; x < x1; x++){
+        var o = rowOff + x * 4;
+        r += srcData[o]; g += srcData[o+1]; b += srcData[o+2]; n++;
+      }
+    }
+    if(n === 0) return { r:255, g:255, b:255 };
+    return { r: r/n, g: g/n, b: b/n };
+  }
+
+  function kmeans(colors, k, iterations){
+    if(k <= 0) k = 1;
+    var step = Math.max(1, Math.floor(colors.length / k));
+    var centroids = [];
+    for(var i = 0; i < k; i++){
+      var src = colors[Math.min(colors.length - 1, i * step)];
+      centroids.push({ r: src.r, g: src.g, b: src.b });
+    }
+
+    var assignments = new Array(colors.length);
+    for(var iter = 0; iter < iterations; iter++){
+      for(var ci = 0; ci < colors.length; ci++){
+        var c = colors[ci], best = 0, bestD = Infinity;
+        for(var j = 0; j < centroids.length; j++){
+          var cd = centroids[j];
+          var dr = c.r - cd.r, dg = c.g - cd.g, db = c.b - cd.b;
+          var d = dr*dr + dg*dg + db*db;
+          if(d < bestD){ bestD = d; best = j; }
+        }
+        assignments[ci] = best;
+      }
+      var sums = centroids.map(function(){ return { r:0, g:0, b:0, n:0 }; });
+      for(var ci2 = 0; ci2 < colors.length; ci2++){
+        var s = sums[assignments[ci2]], c2 = colors[ci2];
+        s.r += c2.r; s.g += c2.g; s.b += c2.b; s.n++;
+      }
+      sums.forEach(function(s, idx){
+        if(s.n > 0) centroids[idx] = { r: s.r/s.n, g: s.g/s.n, b: s.b/s.n };
+      });
+    }
+    return { clusters: centroids, assignments: assignments };
+  }
+
+  function renderPattern(cols, rows, dotSize, assignments, clusters){
+    var cellSize = Math.max(8, Math.min(26, Math.floor(700 / cols)));
+    var marginTop = 20, marginLeft = 26;
+    var w = cols * cellSize + marginLeft, h = rows * cellSize + marginTop;
+    patternCanvas.width = w;
+    patternCanvas.height = h;
+    var ctx = patternCanvas.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    var showSymbol = cellSize >= 14;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Math.floor(cellSize * 0.55) + 'px system-ui, sans-serif';
+
+    for(var y = 0; y < rows; y++){
+      for(var x = 0; x < cols; x++){
+        var cl = clusters[assignments[y * cols + x]];
+        var px = marginLeft + x * cellSize, py = marginTop + y * cellSize;
+        ctx.fillStyle = 'rgb(' + Math.round(cl.r) + ',' + Math.round(cl.g) + ',' + Math.round(cl.b) + ')';
+        ctx.fillRect(px, py, cellSize, cellSize);
+        ctx.strokeStyle = 'rgba(6,50,111,0.12)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 0.5, py + 0.5, cellSize - 1, cellSize - 1);
+        if(showSymbol){
+          var lum = 0.299*cl.r + 0.587*cl.g + 0.114*cl.b;
+          ctx.fillStyle = lum > 150 ? '#06326F' : '#fff';
+          ctx.fillText(cl.symbol, px + cellSize/2, py + cellSize/2 + 1);
+        }
+      }
+    }
+
+    // bold grid every 10 cells + axis numbers for locating stitch position
+    ctx.strokeStyle = 'rgba(6,50,111,0.45)';
+    ctx.fillStyle = '#6B82A3';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.lineWidth = 1.5;
+    for(var gx = 0; gx <= cols; gx += 10){
+      var lx = marginLeft + gx * cellSize;
+      ctx.beginPath(); ctx.moveTo(lx, marginTop); ctx.lineTo(lx, h); ctx.stroke();
+      if(gx > 0){ ctx.textAlign='center'; ctx.fillText(String(gx), lx, marginTop - 8); }
+    }
+    for(var gy = 0; gy <= rows; gy += 10){
+      var ly = marginTop + gy * cellSize;
+      ctx.beginPath(); ctx.moveTo(marginLeft, ly); ctx.lineTo(w, ly); ctx.stroke();
+      if(gy > 0){ ctx.textAlign='right'; ctx.fillText(String(gy), marginLeft - 6, ly); }
+    }
+  }
+
+  function renderLegend(clusters, totalCells){
+    legendCount.textContent = clusters.length + '色 / 全 ' + totalCells + 'マス';
+    legendList.innerHTML = clusters.map(function(c){
+      var hex = rgbToHex(c.r, c.g, c.b);
+      var lum = 0.299*c.r + 0.587*c.g + 0.114*c.b;
+      var txt = lum > 150 ? '#06326F' : '#fff';
+      return '<div class="legend-item">' +
+        '<div class="swatch" style="background:' + hex + ';color:' + txt + '">' + c.symbol + '</div>' +
+        '<div class="legend-meta"><b>' + hex + '</b><br>' + c.count + ' マス</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function rgbToHex(r, g, b){
+    function h(v){ return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'); }
+    return '#' + h(r) + h(g) + h(b);
+  }
+
+  downloadBtn.addEventListener('click', function(){
+    var link = document.createElement('a');
+    link.download = 'needle-embroidery-pattern.png';
+    link.href = patternCanvas.toDataURL('image/png');
+    link.click();
+  });
+})();
+</script>
+</body>
+</html>
