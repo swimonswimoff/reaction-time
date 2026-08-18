@@ -38,6 +38,11 @@ input[type=file]{display:none}
 .field-label .val{color:var(--blue);font-weight:900}
 input[type=range]{width:100%;accent-color:var(--blue)}
 .grid-info{font-size:12px;color:var(--muted);margin-top:6px}
+.size-inputs{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--text)}
+.size-inputs input[type=number]{width:72px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;font-size:14px;font-weight:800;color:var(--text);background:var(--blue-light);outline:none;-moz-appearance:textfield}
+.size-inputs input[type=number]:focus{border-color:var(--blue)}
+.size-x{color:var(--muted)}
+.size-unit{color:var(--muted);font-weight:700;font-size:12px}
 .canvas-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fbfdff;max-height:70vh}
 canvas#pattern{display:block}
 .empty-state{padding:40px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
@@ -62,7 +67,7 @@ canvas#pattern{display:block}
 <div class="app">
   <div class="header"><div class="brand">SWIM-ON GAMES</div></div>
   <h1 class="title">🧵 ニードル刺繍図案メーカー</h1>
-  <p class="subtitle">好きな画像をドット状の図案に変換します。ドットの大きさや色数はスライダーでいつでも調整でき、同じ画像のまま何度でも作り直せます。</p>
+  <p class="subtitle">好きな画像をドット状の図案に変換します。仕上がりのマス数・ドットの大きさ・色数はいつでも調整でき、同じ画像のまま何度でも作り直せます。</p>
 
   <div class="card">
     <h2>1. 画像を選ぶ</h2>
@@ -74,11 +79,17 @@ canvas#pattern{display:block}
   </div>
 
   <div class="card" id="controlsCard" style="display:none">
-    <h2>2. ドットの大きさ・色数を調整</h2>
+    <h2>2. 仕上がりサイズ・色数を調整</h2>
     <div class="field">
-      <div class="field-label"><span>ドットの大きさ</span><span class="val" id="dotSizeVal"></span></div>
-      <input type="range" id="dotSize" min="3" max="40" value="10" step="1">
+      <div class="field-label"><span>仕上がりサイズ（マス数）</span></div>
+      <div class="size-inputs">
+        <input type="number" id="targetCols" min="3" step="1" inputmode="numeric"><span class="size-x">×</span><span id="targetRowsOut">-</span><span class="size-unit">マス（横×縦）</span>
+      </div>
       <div class="grid-info" id="gridInfo"></div>
+    </div>
+    <div class="field">
+      <div class="field-label"><span>ドットの大きさ（詳細調整）</span><span class="val" id="dotSizeVal"></span></div>
+      <input type="range" id="dotSize" min="2" max="40" value="10" step="1">
     </div>
     <div class="field">
       <div class="field-label"><span>糸の色数（減色）</span><span class="val" id="colorCountVal"></span></div>
@@ -121,6 +132,8 @@ canvas#pattern{display:block}
   var placeholderCard = document.getElementById('placeholderCard');
   var dotSizeInput = document.getElementById('dotSize');
   var dotSizeVal = document.getElementById('dotSizeVal');
+  var targetColsInput = document.getElementById('targetCols');
+  var targetRowsOut = document.getElementById('targetRowsOut');
   var colorCountInput = document.getElementById('colorCount');
   var colorCountVal = document.getElementById('colorCountVal');
   var gridInfo = document.getElementById('gridInfo');
@@ -161,6 +174,9 @@ canvas#pattern{display:block}
     dotSizeInput.max = Math.max(4, Math.floor(Math.min(srcW, srcH) / 3));
     dotSizeInput.value = Math.max(3, Math.round(Math.min(srcW, srcH) / 40));
 
+    targetColsInput.min = Math.max(1, Math.floor(srcW / parseInt(dotSizeInput.max, 10)));
+    targetColsInput.max = Math.floor(srcW / parseInt(dotSizeInput.min, 10));
+
     controlsCard.style.display = '';
     patternCard.style.display = '';
     legendCard.style.display = '';
@@ -171,6 +187,15 @@ canvas#pattern{display:block}
 
   dotSizeInput.addEventListener('input', function(){ scheduleGenerate(false); });
   colorCountInput.addEventListener('input', function(){ scheduleGenerate(false); });
+
+  targetColsInput.addEventListener('input', function(){
+    var wantCols = parseInt(targetColsInput.value, 10);
+    if(!wantCols || wantCols < 1) return;
+    var dotMin = parseInt(dotSizeInput.min, 10), dotMax = parseInt(dotSizeInput.max, 10);
+    var newDotSize = Math.min(dotMax, Math.max(dotMin, Math.round(srcW / wantCols)));
+    dotSizeInput.value = newDotSize;
+    scheduleGenerate(false);
+  });
 
   function scheduleGenerate(immediate){
     dotSizeVal.textContent = dotSizeInput.value + 'px';
@@ -187,7 +212,9 @@ canvas#pattern{display:block}
 
     var cols = Math.max(1, Math.floor(srcW / dotSize));
     var rows = Math.max(1, Math.floor(srcH / dotSize));
-    gridInfo.textContent = '仕上がりサイズ: 横 ' + cols + ' マス × 縦 ' + rows + ' マス';
+    targetColsInput.value = cols;
+    targetRowsOut.textContent = rows;
+    gridInfo.textContent = 'ドット ' + dotSize + 'px 換算での実際のマス数です';
 
     var cellColors = new Array(cols * rows);
     for(var ry = 0; ry < rows; ry++){
